@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import stats
 from scipy.signal import gaussian, convolve
+from scipy.fftpack import fft, ifft # faster than np.fft.fft and np.fft.ifft
 
 def gaussian_kde(x, h=None):
     
@@ -120,6 +121,8 @@ def convolution_kde(x, h=None, grid_len=None, extend=True):
     
     return grid, pdf
 
+from scipy.fftpack import fft, ifft # faster than np.fft.fft and np.fft.ifft
+
 # -------------------------------------------------------------------------------------
 def _dct1d(x):
     
@@ -137,7 +140,7 @@ def _dct1d(x):
     output : Transformed values
     """
 
-    x = np.asfarray(x, dtype='float')
+#     x = np.asfarray(x, dtype='float')
     x_len = len(x)
 
     even_increasing = np.arange(0, x_len, 2)
@@ -146,8 +149,8 @@ def _dct1d(x):
     x = np.concatenate((x[even_increasing], x[odd_decreasing]))
     
     w_1k = np.r_[1, (2 * np.exp(-(0 + 1j) * (np.arange(1, x_len)) * np.pi / (2 * x_len)))]
-    output = np.real(w_1k * np.fft.fft(x))
-
+    output = np.real(w_1k * fft(x))
+    
     return output
 
 # -------------------------------------------------------------------------------------
@@ -167,15 +170,15 @@ def _idct1d(x):
     output : Transformed values
     """
 
-    x = np.asfarray(x, dtype='float')
+#     x = np.asfarray(x, dtype='float')
     x_len = len(x)
 
     w_2k = x * np.exp((0 + 1j) * np.arange(0, x_len) * np.pi / (2 * x_len))
-    x = np.real(np.fft.ifft(w_2k))
+    x = np.real(ifft(w_2k))
 
     output = np.zeros(x_len)
     output[np.arange(0, x_len, 2, dtype=int)] = x[np.arange(0, x_len / 2, dtype=int)]
-    output[np.arange(1, x_len, 2, dtype=int)] = x[np.flip(np.arange(x_len / 2, x_len, dtype=int))]
+    output[np.arange(1, x_len, 2, dtype=int)] = x[np.arange(x_len - 1, (x_len / 2) - 1, -1, dtype=int)]
 
     return output
 
