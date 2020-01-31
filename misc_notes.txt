@@ -1,0 +1,27 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Jones, Marron and Sheather (1996) studied the Monte Carlo performance of the normal reference bandwidth based on the 
+standard deviation, that is, they considered $h = 1.06*S*N^{-0.2}$, where S is the sample standard deviation. 
+They found that $h$ had a mean that was usually unacceptably large and thus often produced oversmoother density estimates 
+> Density Estimation - Simon J. Sheather (2004), page 3.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Improved plug-in method, which gives a (TIPICALLY UNIQUE) solution of the nonlinear equation
+// The bad thing is the "tipically unique"
+> Handbook of Monte Carlo Methods - Kroese et. al (2011), page 327.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Misc:
+
+* Mention there exists alternatives where the kernel is variable, but we don't cover it.
+* Local density estimates and data sharpening are other methods available we don't cover.
+* Could mention Jones, Marron and Sheather (1996) a brief survey of bandwidth selection for density estimation.
+* 2004 paper by Sheather has a good summary of LSCV, BCV and their drawbacks.
+> The slow rate of convergence of LSCV and BCV encouraged much research on faster converging methods. 
+A popular approach, commonly called plug-in methods, is to replace the unknown quantity $R(f'')$ in the expression for 
+$h_{AMISE}$ given by (3) with an estimate.
+That is why they are called PLUG-IN methods.
+* Exact MISE calculations are shown in Wand and Jones (1995, pages 24-25)
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Se podria empezar tipo una historia, contando que estaba LSCV, que hubo metodos que lo mejoraron (Park and Marron (1990)) 
+y que el siguiente metodo en mejorarlo fue SJ, ambos necesitando resolver un problema numerico.
+Despues contar que no paso nada interesante hasta ISJ. No es tan asi, pero no vamos a pasar por todos los metodos...
