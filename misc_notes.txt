@@ -1,9 +1,4 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Jones, Marron and Sheather (1996) studied the Monte Carlo performance of the normal reference bandwidth based on the 
-standard deviation, that is, they considered $h = 1.06*S*N^{-0.2}$, where S is the sample standard deviation. 
-They found that $h$ had a mean that was usually unacceptably large and thus often produced oversmoother density estimates 
-> Density Estimation - Simon J. Sheather (2004), page 3.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Improved plug-in method, which gives a (TIPICALLY UNIQUE) solution of the nonlinear equation
 // The bad thing is the "tipically unique"
 > Handbook of Monte Carlo Methods - Kroese et. al (2011), page 327.
@@ -20,8 +15,12 @@ $h_{AMISE}$ given by (3) with an estimate.
 That is why they are called PLUG-IN methods.
 * Exact MISE calculations are shown in Wand and Jones (1995, pages 24-25)
 
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Se podria empezar tipo una historia, contando que estaba LSCV, que hubo metodos que lo mejoraron (Park and Marron (1990)) 
 y que el siguiente metodo en mejorarlo fue SJ, ambos necesitando resolver un problema numerico.
 Despues contar que no paso nada interesante hasta ISJ. No es tan asi, pero no vamos a pasar por todos los metodos...
+
+
+Otro metodo que dice que mejora SJ (pero no tanto) https://www.tandfonline.com/doi/abs/10.1080/10485250903194003
+
+PISA pquete de python que implementa ISJ y lo habilita para KDE variable.

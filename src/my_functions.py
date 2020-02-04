@@ -3,7 +3,7 @@ from scipy import stats
 from scipy.signal import gaussian, convolve
 from scipy.fftpack import fft, ifft # faster than np.fft.fft and np.fft.ifft
 
-def gaussian_kde(x, h=None):
+def gaussian_kde(x, h=None, grid_len=500, extend=True):
     
     """
     Naive, inefficient, but straightforward Gaussian KDE
@@ -11,11 +11,17 @@ def gaussian_kde(x, h=None):
     Parameters
     ----------
     x : array-like
-        1 dimensional array of the variable for which a 
+        1 dimensional array of sample data from the variable for which a 
         density estimate is desired.
     h : float, optional
         Bandwidth (standard deviation of each Gaussian component)
-        Defaults to None, which uses gaussian rule of thumb.
+        Defaults to None, which uses Gaussian robust rule of thumb.
+    grid_len : int, optional
+        Number of points where the kernel is evaluated. 
+        Defaults to 500.
+    extend: boolean, optional
+        Whether to extend the domain of the observed data or not. 
+        Defaults to True.
     
     Returns
     -------
@@ -26,10 +32,13 @@ def gaussian_kde(x, h=None):
     
     x_std = np.std(x)
     x_len = len(x)
-    
-    grid_len = 500
-    grid_min = np.min(x) - 1 * x_std
-    grid_max = np.max(x) + 1 * x_std
+        
+    if extend:
+        grid_min = np.min(x) - x_std
+        grid_max = np.max(x) + x_std
+    else:
+        grid_min = x_min
+        grid_max = x_max
     
     grid = np.linspace(grid_min, grid_max, num=grid_len)
     
@@ -37,7 +46,7 @@ def gaussian_kde(x, h=None):
     
     if h is None:
         s = min(x_std, stats.iqr(x) / 1.34)
-        h = 1.058 * s * x_len ** (-0.2)    
+        h = 0.9 * s * x_len ** (-0.2)    
     
     for i in range(0, x_len):
         mu = x[i]
@@ -45,26 +54,25 @@ def gaussian_kde(x, h=None):
      
     pdf = np.mean(pdf_mat, axis=0)
     
-    return grid, pdf 
+    return grid, pdf   
 
-
-def convolution_kde(x, h=None, grid_len=None, extend=True):
+def convolution_kde(x, h=None, grid_len=256, extend=True):
     
     """
-    Gaussian KDE via convolution of empirical distribution with Gaussian signal
+    Gaussian KDE via convolution of empirical density with Gaussian signal
     
     Parameters
     ----------
     x : array-like
-        1 dimensional array of the observed data for which a 
+        1 dimensional array of sample data from the variable for which a 
         density estimate is desired.
     h : float, optional
         Bandwidth (standard deviation of each Gaussian component)
-        Defaults to None, which uses gaussian rule of thumb.
+        Defaults to None, which uses Gaussian rule of thumb.
     grid_len : int, optional
         Number of points where the kernel is evaluated. 
-        Defaults to None, which means 256 grid points.
-    extend: bool, optional
+        Defaults to 256 grid points.
+    extend: boolean, optional
         Whether to extend the domain of the observed data
         or not. Defaults to True.
     
@@ -83,17 +91,17 @@ def convolution_kde(x, h=None, grid_len=None, extend=True):
     x_std = np.std(x)
     
     # Set up number of bins
-    if grid_len is None:
-        grid_len = 256
-    elif grid_len > 512:
+    if grid_len > 512:
         grid_len = 512
     else:
         grid_len = 2 ** np.ceil(np.log2(grid_len))
     
+    grid_len = int(grid_len)
+    
     # Set up grid length
     if extend:
-        grid_min = x_min - 1 * x_std
-        grid_max = x_max + 1 * x_std
+        grid_min = x_min - x_std
+        grid_max = x_max + x_std
     else:
         grid_min = x_min
         grid_max = x_max
@@ -107,21 +115,19 @@ def convolution_kde(x, h=None, grid_len=None, extend=True):
     if h is None:
         x_std = x_std
         s = min(x_std, stats.iqr(x) / 1.34)
-        h = 1.058 * s * x_len ** (-0.2) 
+        h = 0.9 * s * x_len ** (-0.2) 
         
     # Bandwidth must consider the bin width
     h /= bin_width
     
     kernel = gaussian(120, h)
-    pdf = convolve(f, kernel, mode="same", method="fft") / sum(kernel)
+    pdf = convolve(f, kernel, mode="same", method="direct") / sum(kernel) # "direct" better than "fft" for n < ~ 500.
     
     grid = np.linspace(grid_min, grid_max, num=grid_len)
     # alternative
     # grid = 0.5 * (edges[1:] + edges[:-1]) 
     
     return grid, pdf
-
-from scipy.fftpack import fft, ifft # faster than np.fft.fft and np.fft.ifft
 
 # -------------------------------------------------------------------------------------
 def _dct1d(x):
