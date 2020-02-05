@@ -20,7 +20,6 @@ Se podria empezar tipo una historia, contando que estaba LSCV, que hubo metodos 
 y que el siguiente metodo en mejorarlo fue SJ, ambos necesitando resolver un problema numerico.
 Despues contar que no paso nada interesante hasta ISJ. No es tan asi, pero no vamos a pasar por todos los metodos...
 
-
 Otro metodo que dice que mejora SJ (pero no tanto) https://www.tandfonline.com/doi/abs/10.1080/10485250903194003
 
 PISA pquete de python que implementa ISJ y lo habilita para KDE variable.
