@@ -130,7 +130,7 @@ def convolution_kde(x, h=None, grid_len=256, extend=True):
     return grid, pdf
 
 # -------------------------------------------------------------------------------------
-def _dct1d(x):
+def dct1d(x):
     
     """
     Discrete Cosine Transform in 1 Dimension
@@ -160,7 +160,7 @@ def _dct1d(x):
     return output
 
 # -------------------------------------------------------------------------------------
-def _idct1d(x):
+def idct1d(x):
     
     """
     Inverse Discrete Cosine Transform in 1 Dimension
@@ -243,7 +243,7 @@ def theta_kde(x, h=None, grid_len=None, extend=True):
     f, edges = np.histogram(x, bins=grid_len, range=(grid_min, grid_max), density=True)
 
     # Discrete cosine transform of the data
-    a_k = _dct1d(f)
+    a_k = dct1d(f)
 
     # Bandwidth selection
     if h is None:
@@ -258,7 +258,7 @@ def theta_kde(x, h=None, grid_len=None, extend=True):
     a_k = a_k * np.exp(-np.arange(0, grid_len) ** 2 * np.pi ** 2 * t * 0.5)
 
     # Inverse discrete cosine transform
-    density = _idct1d(a_k)
+    density = idct1d(a_k)
 
     grid = np.linspace(grid_min, grid_max, num=grid_len)
     # alternative

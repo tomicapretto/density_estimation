@@ -1,7 +1,12 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Improved plug-in method, which gives a (TIPICALLY UNIQUE) solution of the nonlinear equation
-// The bad thing is the "tipically unique"
-> Handbook of Monte Carlo Methods - Kroese et. al (2011), page 327.
+* At a conceptual level the use of the normal reference rule invalidates the original motivation for applygin a nonparametric method in the first place.
+* Gaussian KDE lacks local adaptivity and this often results in a large sensitivity to outliers, the presence of spurious bumps, and in an overall unsatisfactory bias performance - a tendency to flatten the peaks and valleys of the density.
+* Then, boundary bias. Most kernels don't incoporate specific knowledge about the domain of the data.
+// Very serious critics to the gaussian KDE and its normal reference rule.
+> Kernel density estimation via diffusion, page 2.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Don't forget to mention Abramson's method when mentioning variable bandwidth kde.
+Abramson's square root law states the aymptotically optimal variable bandwidth is proportional to $f_p^{-1/2}(y)$
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Misc:
 
@@ -16,10 +21,4 @@ That is why they are called PLUG-IN methods.
 * Exact MISE calculations are shown in Wand and Jones (1995, pages 24-25)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Se podria empezar tipo una historia, contando que estaba LSCV, que hubo metodos que lo mejoraron (Park and Marron (1990)) 
-y que el siguiente metodo en mejorarlo fue SJ, ambos necesitando resolver un problema numerico.
-Despues contar que no paso nada interesante hasta ISJ. No es tan asi, pero no vamos a pasar por todos los metodos...
-
 Otro metodo que dice que mejora SJ (pero no tanto) https://www.tandfonline.com/doi/abs/10.1080/10485250903194003
-
-PISA pquete de python que implementa ISJ y lo habilita para KDE variable.
