@@ -1,3 +1,4 @@
 .ipynb_checkpoints
 *.pyc
 src/__pycache__
+misc/

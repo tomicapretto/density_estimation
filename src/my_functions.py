@@ -1,16 +1,15 @@
 import numpy as np
 from scipy import stats
 from scipy.signal import gaussian, convolve
-from scipy.fftpack import fft, ifft # faster than np.fft.fft and np.fft.ifft
+from scipy.fftpack import fft, ifft
 
 def gaussian_kde(x, h=None, grid_len=500, extend=True):
-    
     """
     Naive, inefficient, but straightforward Gaussian KDE
-    
+
     Parameters
     ----------
-    x : array-like
+    x : numpy array
         1 dimensional array of sample data from the variable for which a 
         density estimate is desired.
     h : float, optional
@@ -22,39 +21,34 @@ def gaussian_kde(x, h=None, grid_len=500, extend=True):
     extend: boolean, optional
         Whether to extend the domain of the observed data or not. 
         Defaults to True.
-    
+
     Returns
     -------
     grid : Gridded numpy array for the x values.
     pdf : Numpy array for the density estimates.
-    
+
     """
-    
-    x_std = np.std(x)
+
+    x_std = x.std()
     x_len = len(x)
-        
+
     if extend:
-        grid_min = np.min(x) - x_std
-        grid_max = np.max(x) + x_std
+        grid_min = np.min(x) - 0.5 * x_std
+        grid_max = np.max(x) + 0.5 * x_std
     else:
         grid_min = x_min
         grid_max = x_max
-    
+
     grid = np.linspace(grid_min, grid_max, num=grid_len)
-    
-    pdf_mat = np.zeros((x_len, grid_len))
-    
+
     if h is None:
         s = min(x_std, stats.iqr(x) / 1.34)
-        h = 0.9 * s * x_len ** (-0.2)    
-    
-    for i in range(0, x_len):
-        mu = x[i]
-        pdf_mat[i, :] = np.exp(-0.5 * ((grid - mu) / h) ** 2) / (np.sqrt(2 * np.pi) * h)
-     
+        h = 0.9 * s * x_len ** (-0.2)
+
+    pdf_mat = np.exp(-0.5 * ((grid - x[:, None]) / h) ** 2) / ((2 * np.pi) ** 0.5 * h)
     pdf = np.mean(pdf_mat, axis=0)
-    
-    return grid, pdf   
+
+    return grid, pdf 
 
 def convolution_kde(x, h=None, grid_len=256, extend=True):
     
@@ -63,7 +57,7 @@ def convolution_kde(x, h=None, grid_len=256, extend=True):
     
     Parameters
     ----------
-    x : array-like
+    x : numpy array
         1 dimensional array of sample data from the variable for which a 
         density estimate is desired.
     h : float, optional
@@ -100,8 +94,8 @@ def convolution_kde(x, h=None, grid_len=256, extend=True):
     
     # Set up grid length
     if extend:
-        grid_min = x_min - x_std
-        grid_max = x_max + x_std
+        grid_min = x_min - 0.5 * x_std
+        grid_max = x_max + 0.5 * x_std
     else:
         grid_min = x_min
         grid_max = x_max
@@ -124,12 +118,9 @@ def convolution_kde(x, h=None, grid_len=256, extend=True):
     pdf = convolve(f, kernel, mode="same", method="direct") / sum(kernel) # "direct" better than "fft" for n < ~ 500.
     
     grid = np.linspace(grid_min, grid_max, num=grid_len)
-    # alternative
-    # grid = 0.5 * (edges[1:] + edges[:-1]) 
-    
+
     return grid, pdf
 
-# -------------------------------------------------------------------------------------
 def dct1d(x):
     
     """
@@ -146,9 +137,7 @@ def dct1d(x):
     output : Transformed values
     """
 
-#     x = np.asfarray(x, dtype='float')
     x_len = len(x)
-
     even_increasing = np.arange(0, x_len, 2)
     odd_decreasing = np.arange(x_len - 1, 0, -2)
 
@@ -159,7 +148,6 @@ def dct1d(x):
     
     return output
 
-# -------------------------------------------------------------------------------------
 def idct1d(x):
     
     """
@@ -175,8 +163,7 @@ def idct1d(x):
     -------
     output : Transformed values
     """
-
-#     x = np.asfarray(x, dtype='float')
+    
     x_len = len(x)
 
     w_2k = x * np.exp((0 + 1j) * np.arange(0, x_len) * np.pi / (2 * x_len))
@@ -188,15 +175,15 @@ def idct1d(x):
 
     return output
 
-# --------------------------------------------------------------------------------------------------------
-def theta_kde(x, h=None, grid_len=None, extend=True):
+# -------------------------------------------------------------------------------------
+def theta_kde(x, h=None, grid_len=256, extend=True):
     
     """
     Approximation to Gaussian KDE via Theta kernel
     
     Parameters
     ----------
-    x : array-like
+    x : numpy array
         1 dimensional array of the observed data for which a 
         density estimate is desired.
     h : float, optional
@@ -204,7 +191,7 @@ def theta_kde(x, h=None, grid_len=None, extend=True):
         Defaults to None, which uses gaussian rule of thumb.
     grid_len : int, optional
         Number of points where the kernel is evaluated. 
-        Defaults to None, which means 256 grid points.
+        Defaults to 256 grid points.
     extend: bool, optional
         Whether to extend the domain of the observed data
         or not. Defaults to True.
@@ -224,17 +211,17 @@ def theta_kde(x, h=None, grid_len=None, extend=True):
     x_std = np.std(x)
     
     # Set up number of bins
-    if grid_len is None:
-        grid_len = 256
-    elif grid_len > 512:
+    if grid_len > 512:
         grid_len = 512
     else:
         grid_len = 2 ** np.ceil(np.log2(grid_len))
     
-    # Set up grid length
+    grid_len = int(grid_len)
+    
+    # Set up grid range
     if extend:
-        grid_min = x_min - 1 * x_std
-        grid_max = x_max + 1 * x_std
+        grid_min = x_min - 0.5 * x_std
+        grid_max = x_max + 0.5 * x_std
     else:
         grid_min = x_min
         grid_max = x_max
@@ -248,7 +235,7 @@ def theta_kde(x, h=None, grid_len=None, extend=True):
     # Bandwidth selection
     if h is None:
         s = min(x_std, stats.iqr(x) / 1.34)
-        t = 1.12 * s ** 2 * x_len ** (-0.4)
+        t = 1.12 * s ** 2 * x_len ** (-0.4) # 1.12 could be replaced with 0.9^2 according to Silverman.
     else:
         t = float(h) ** 2
     
@@ -261,7 +248,4 @@ def theta_kde(x, h=None, grid_len=None, extend=True):
     density = idct1d(a_k)
 
     grid = np.linspace(grid_min, grid_max, num=grid_len)
-    # alternative
-    # grid = 0.5 * (edges[1:] + edges[:-1]) 
-
     return grid, density
