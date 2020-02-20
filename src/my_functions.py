@@ -249,3 +249,56 @@ def theta_kde(x, h=None, grid_len=256, extend=True):
 
     grid = np.linspace(grid_min, grid_max, num=grid_len)
     return grid, density
+
+# Bandwidth selectors ==========================================================
+from scipy.optimize import fsolve
+
+# Improved sheather jones
+def _fixed_point(t, N, k_sq, a_sq):
+
+    # To avoid prevent powers from overflowing.
+    k_sq = np.asfarray(k_sq, dtype='float')
+    a_sq = np.asfarray(a_sq, dtype='float')
+
+    l = 7
+    f = 0.5 * np.pi ** (2.0 * l) * sum(k_sq ** l * a_sq * np.exp(-k_sq * np.pi ** 2.0 * t))
+
+    for j in reversed(range(2, l)):
+        c1  = (1 + 0.5**(j + 0.5)) / 3.0
+        c2  = np.product(np.arange(1., 2. * j + 1., 2., dtype = 'float')) / np.sqrt(np.pi / 2)
+        t_j = np.power((c1 * c2 / (N * f)), (2 / (3 + 2 * j)))
+        f   = 0.5 * np.pi ** (2. * j) * sum(k_sq ** j * a_sq * np.exp(-k_sq * np.pi ** 2. * t_j) )
+
+    out = t - (2. * N * np.sqrt(np.pi) * f) ** (-0.4)
+    return out
+
+def h_isj(x, grid_len = 256):
+    
+    x_len = len(x)
+    x_min = np.min(x)
+    x_max = np.max(x)
+    x_range = x_max - x_min
+    x_std = np.std(x)
+    
+    grid_min = x_min - 0.5 * x_std
+    grid_max = x_max + 0.5 * x_std
+       
+    # Relative frequency per bin
+    f, edges = np.histogram(x, bins=grid_len, range=(grid_min, grid_max))
+    f = f / x_len
+
+    # Discrete cosine transform of the data
+    a_k = dct1d(f)
+    
+    k_sq = np.arange(1, grid_len) ** 2
+    a_sq = a_k[range(1, grid_len)] ** 2
+    
+    t = fsolve(_fixed_point, 0.02, args=(x_len, k_sq, a_sq))
+    h = np.sqrt(t[0]) * x_range
+    
+    return h
+
+# Silverman's rule of thumb
+def h_sil(x):
+    h = 0.9 * min(np.std(x), stats.iqr(x) / 1.34) * len(x) ** (-0.2)
+    return h
