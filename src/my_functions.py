@@ -269,7 +269,7 @@ def theta_kde(x, h=None, grid_len=256, extend=True):
     # Bandwidth selection
     if h is None:
         s = min(x_std, stats.iqr(x) / 1.34)
-        t = 1.12 * s ** 2 * x_len ** (-0.4) # 1.12 could be replaced with 0.9^2 according to Silverman.
+        t = 0.9 * s ** 2 * x_len ** (-0.4)
     else:
         t = float(h) ** 2
     
@@ -295,13 +295,13 @@ def _fixed_point(t, N, k_sq, a_sq):
     a_sq = np.asfarray(a_sq, dtype='float')
 
     l = 7
-    f = 0.5 * np.pi ** (2.0 * l) * sum(k_sq ** l * a_sq * np.exp(-k_sq * np.pi ** 2.0 * t))
+    f = 0.5 * np.pi ** (2.0 * l) * np.sum(k_sq ** l * a_sq * np.exp(-k_sq * np.pi ** 2.0 * t))
 
     for j in reversed(range(2, l)):
         c1  = (1 + 0.5**(j + 0.5)) / 3.0
         c2  = np.product(np.arange(1., 2. * j + 1., 2., dtype = 'float')) / np.sqrt(np.pi / 2)
         t_j = np.power((c1 * c2 / (N * f)), (2 / (3 + 2 * j)))
-        f   = 0.5 * np.pi ** (2. * j) * sum(k_sq ** j * a_sq * np.exp(-k_sq * np.pi ** 2. * t_j) )
+        f   = 0.5 * np.pi ** (2. * j) * np.sum(k_sq ** j * a_sq * np.exp(-k_sq * np.pi ** 2. * t_j) )
 
     out = t - (2. * N * np.sqrt(np.pi) * f) ** (-0.4)
     return out
