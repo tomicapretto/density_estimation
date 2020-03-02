@@ -50,6 +50,40 @@ def gaussian_kde(x, h=None, grid_len=500, extend=True):
 
     return grid, pdf 
 
+def gaussian_kde_binned(x, h=None, grid_len=256, extend=True):
+    
+    # Calculate preliminary values
+    x_len = len(x)
+    x_max = np.max(x)
+    x_min = np.min(x)
+    x_std = np.std(x)
+    
+    if grid_len > 500:
+        grid_len = 500
+    
+    grid_len = int(grid_len)
+    
+    # Set up grid length
+    if extend:
+        grid_min = x_min - 0.5 * x_std
+        grid_max = x_max + 0.5 * x_std
+    else:
+        grid_min = x_min
+        grid_max = x_max
+       
+    # Calculate relative frequencies per bin
+    grid_counts, grid = np.histogram(x, bins=grid_len, range=(grid_min, grid_max))
+    grid = (grid[1:]  + grid[:-1]) / 2
+    
+    if h is None:
+        s = min(x_std, stats.iqr(x) / 1.34)
+        h = 0.9 * s * x_len ** (-0.2) 
+
+    pdf_mat = np.exp(-0.5 * ((grid - grid[:, None]) / h) ** 2) / ((2 * np.pi) ** 0.5 * h) * grid_counts[:, None]
+    pdf = np.sum(pdf_mat, axis=0) / x_len
+
+    return grid, pdf
+
 def convolution_kde(x, h=None, grid_len=256, extend=True):
     
     """
@@ -302,3 +336,73 @@ def h_isj(x, grid_len = 256):
 def h_sil(x):
     h = 0.9 * min(np.std(x), stats.iqr(x) / 1.34) * len(x) ** (-0.2)
     return h
+	
+from scipy.optimize import fsolve
+
+# The n-th derivative of a gaussian pdf is given by the pdf times 
+# the n-th probabilists' Hermite polynomial.
+# ref: https://math.stackexchange.com/questions/2287895/are-derivatives-of-the-standard-gaussian-density-bounded
+def phi6(x):
+    return (x ** 6 - 15 * x ** 4 + 45 * x ** 2 - 15) * stats.norm.pdf(x)
+
+def phi4(x):
+    return (x ** 4 - 6 * x ** 2 + 3) * stats.norm.pdf(x)
+
+def sj_helper(h, s_a, t_b, x_len, x_len_mult, x_pairwise_diff):
+    """
+    Equation 12 of Sheather and Jones [1]
+    Equation 3.9 in this work.
+    
+    References
+    ----------
+    .. [1] A reliable data-based bandwidth selection method for kernel
+        density estimation. Simon J. Sheather and Michael C. Jones.
+        Journal of the Royal Statistical Society, Series B. 1991
+    """
+    
+    numerator = 0.375 * np.pi ** -0.5  
+    g_h = 1.357 * np.abs(s_a / t_b) ** (1 / 7) * h ** (5 / 7)
+    s_g = np.sum(np.sum(phi4(x_pairwise_diff / g_h), 0))
+    s_g *= x_len_mult * g_h ** -5
+    
+    output = (numerator / np.abs(s_g * x_len)) ** 0.2 - h
+    
+    return output
+
+def h_sj(x):
+    """
+    Computes Sheather-Jones bandwidth for Gaussian KDE
+    
+    Parameters
+    ----------
+    x : numpy array
+        1 dimensional array of sample data from the variable for which a 
+        density estimate is desired.  
+    Returns
+    -------
+    h : float
+        Bandwidth estimated via Least Squares Cross-Validation
+    """
+    
+    x_len = len(x)
+    x_std = np.std(x)
+    x_iqr = stats.iqr(x)
+    
+    a = 0.92 * x_iqr * x_len ** (-1 / 7)
+    b = 0.912 * x_iqr * x_len ** (-1 / 9) 
+    
+    x_len_mult = 1 / (x_len * (x_len - 1))
+    x_matrix = np.tile(x, (x_len, 1))
+    x_pairwise_diff = x_matrix - x_matrix.T
+
+    t_b = np.sum(np.sum(phi6(x_pairwise_diff / b), 0))
+    t_b *= - x_len_mult * b ** -7
+
+    s_a = np.sum(np.sum(phi4(x_pairwise_diff / a), 0))
+    s_a *= x_len_mult * a ** -5
+    
+    # Silverman's rule as initial value for h
+    h0 = 0.9 * x_std * x_len ** (-0.2)
+    
+    result = fsolve(sj_helper, h0, args=(s_a, t_b, x_len, x_len_mult, x_pairwise_diff))
+    return result[0]
