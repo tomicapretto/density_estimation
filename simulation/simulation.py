@@ -9,16 +9,16 @@ pdf_kwargs = {
     "gmixture_3": {"params": {"mean" : [0, 0], "sd": [1, 0.1], "wt": [0.667, 0.333]}, "func_key": "gaussian"},
     "gmixture_4": {"params": {"mean" : [0, 1.5], "sd": [1, 0.33], "wt": [0.75, 0.25]}, "func_key": "gaussian"},
     "gmixture_5": {"params": {"mean" : [3.5, 9], "sd": [0.5, 1.5], "wt": [0.6, 0.4]}, "func_key": "gaussian"},
-    "gamma_1": {"params": {"shape" : 1}, "func_key": "gamma"},
-    "gamma_2": {"params": {"shape" : 2}, "func_key": "gamma"},
-    "beta_1": {"params": {"a" : 2.5, "b" : 1.5}, "func_key": "beta"},
-    "logn_1": {"params": {"scale" : 1}, "func_key": "logn"}
+    "gamma_1": {"params": {"shape" : 1}, "func_key": "gamma", "bc": True, "lims": [0, 5]},
+    "gamma_2": {"params": {"shape" : 2}, "func_key": "gamma", "bc": True, "lims": [0, 9.5]},
+    "beta_1": {"params": {"a" : 2.5, "b" : 1.5}, "func_key": "beta", "bc": True, "lims": [0, 1]},
+    "logn_1": {"params": {"scale" : 1}, "func_key": "logn", "bc": True, "lims": [0, 11]}
 }
 
 sizes = [200, 500, 1000, 5000, 10000]
 sizes_sj = [200, 500, 1000]
-niter = 300
-niter_sj = 100
+niter = 10
+niter_sj = 1
 
 # Fixed gaussian ------------------------------------------------------------
 estimator_name = "fixed_gaussian"
