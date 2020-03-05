@@ -107,8 +107,9 @@ def aux_sum2(x, fun, den):
     out = 0
     for i in range(len(x)):
         out += np.sum(fun((x[i] - x) / den))
+    return out
 
-def _sj_helper(h, s_a, t_b, x_len, x_len_mult, x_pairwise_diff):
+def _sj_helper(h, s_a, t_b, x, x_len, x_len_mult, x_pairwise_diff):
     """
     Equation 12 of Sheather and Jones [1]
     
@@ -121,7 +122,12 @@ def _sj_helper(h, s_a, t_b, x_len, x_len_mult, x_pairwise_diff):
     
     numerator = 0.375 * np.pi ** -0.5  
     g_h = 1.357 * np.abs(s_a / t_b) ** (1 / 7) * h ** (5 / 7)
-    s_g = np.sum(np.sum(_phi4(x_pairwise_diff / g_h), 0))
+    
+    if x_len <= 1000:
+        s_g = aux_sum1(x_pairwise_diff, _phi4, g_h)
+    else:
+        s_g = aux_sum2(x, _phi4, g_h)
+    
     s_g *= x_len_mult * g_h ** -5
     
     output = (numerator / np.abs(s_g * x_len)) ** 0.2 - h
@@ -154,22 +160,22 @@ def bw_sj(x):
     x_matrix = np.tile(x, (x_len, 1))
     x_pairwise_diff = x - x[:, None]
     
-    if x_len <= 5000:
-        t_b = aux_sum1(x_pairwise_diff, phi6, b)
+    if x_len <= 1000:
+        t_b = aux_sum1(x_pairwise_diff, _phi6, b)
         t_b *= - x_len_mult * b ** -7
         
-        s_a = aux_sum1(x_pairwise_diff, phi4, a)
+        s_a = aux_sum1(x_pairwise_diff, _phi4, a)
         s_a *= x_len_mult * a ** -5
     else:
-        t_b = aux_sum1(x, phi6, b)
+        t_b = aux_sum2(x, _phi6, b)
         t_b *= - x_len_mult * b ** -7
         
-        s_a = aux_sum1(x, phi6, a)
+        s_a = aux_sum2(x, _phi4, a)
         s_a *= x_len_mult * a ** -5
     
     h0 = 0.9 * x_std * x_len ** (-0.2)
     
-    result = fsolve(_sj_helper, h0, args=(s_a, t_b, x_len, x_len_mult, x_pairwise_diff))
+    result = fsolve(_sj_helper, h0, args=(s_a, t_b, x, x_len, x_len_mult, x_pairwise_diff))
     return result[0]
 	
 def _dct1d(x):
