@@ -111,9 +111,9 @@ def get_funcs(identifier, **kwargs):
     
     return rvs_func, pdf_func
 
-def simulate(rvs_func, pdf_func, pdf_name, 
-             estimator_func, estimator_name, 
-             bw_name, sizes, niter=200):
+def simulate_single(rvs_func, pdf_func, pdf_name, 
+                    estimator_func, estimator_name, 
+                    bw_name, sizes, niter=120):
     
     colums = ["iter", "pdf", "estimator", "bw", "size", "time", "error"]
     df = pd.DataFrame(columns=colums)
@@ -139,4 +139,23 @@ def simulate(rvs_func, pdf_func, pdf_name,
             df.loc[loc] = [i + 1, pdf_name, estimator_name, bw_name, size, time, ise]
             loc += 1
         
+    return df
+
+def simulate(estimator_func, estimator_name, bw_name, sizes, pdf_kwargs, niter=120):
+    
+    pdf_names = list(pdf_kwargs.keys())
+    columns = ["iter", "pdf", "estimator", "bw", "size", "time", "error"]
+    df = pd.DataFrame(columns=columns)
+      
+    for name in pdf_names:
+        params = pdf_kwargs[name]["params"]
+        func_key = pdf_kwargs[name]["func_key"]
+        rvs_func, pdf_func = get_funcs(func_key, **params)
+        
+        df2 = simulate_single(rvs_func, pdf_func, name, 
+                              estimator_func, estimator_name, 
+                              bw_name, sizes, niter)
+        
+        df = df.append(df2, ignore_index = True)
+    
     return df
