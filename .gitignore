@@ -4,3 +4,4 @@ notebooks/.ipynb_checkpoints
 src/__pycache__
 misc/
 *.csv
+.Rproj.user

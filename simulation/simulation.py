@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from sim_utils import print_status, simulate 
 
@@ -17,8 +18,14 @@ pdf_kwargs = {
 
 sizes = [200, 500, 1000, 5000, 10000]
 sizes_sj = [200, 500, 1000]
-niter = 10
-niter_sj = 1
+niter = 500
+niter_sj = 120
+
+np.random.seed(1995)
+
+print(f"Sizes: {sizes} and {sizes_sj} for Sheather-Jones")
+print(f"Number of iterations: {niter} and {niter_sj} for Sheather-Jones")
+print("-------------------------------------------")
 
 # Fixed gaussian ------------------------------------------------------------
 estimator_name = "fixed_gaussian"
