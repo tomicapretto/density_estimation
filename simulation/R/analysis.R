@@ -51,7 +51,7 @@ data_clean <- data_all %>%
   ) %>%
   mutate(
     time_clean = ifelse(time >= time_p975, NA, time),
-    error_clean = ifelse(error >= time_p975, NA, error)
+    error_clean = ifelse(error >= error_p975, NA, error)
   )
 
 # Generate plots ---------------------------------------------------------------
