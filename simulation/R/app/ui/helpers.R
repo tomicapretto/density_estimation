@@ -1,4 +1,4 @@
-library(shinyWidgets)
+source("utils.R")
 
 # Sidebar panel ----------------------------------------------------------------
 mySidebarPanel <- function() {
@@ -7,7 +7,7 @@ mySidebarPanel <- function() {
     radioGroupButtons(
       inputId = "metric",
       label = "Select a metric",
-      choices = c("Time", "Error"),
+      choices = c("Time" = "time", "Error" = "error"),
       justified = TRUE
     ),
     
@@ -21,26 +21,20 @@ mySidebarPanel <- function() {
       multiple = TRUE
     ),
     
-    # TODO: Add update input
     selectInput(
       inputId = "bw",
       label = "Bandwidth(s)",
-      choices = c("Silverman's rule" = "silverman",
-                  "Scott's rule" = "scott",
-                  "Sheather-Jones" = "sj",
-                  "Improved Sheather-Jones" = "isj",
-                  "Experimental" = "experimental"),
-      selected = "silverman",
+      choices = choices_bw_classic,
+      selected = choices_bw_classic[[1]],
       multiple = TRUE
     ),
     
-    # TODO: Add update input
     checkboxGroupButtons(
       inputId = "size",
       label = "Sample size(s)",
-      choices = c(200, 500, 1000, 5000, 10000),
+      choices = choices_size_default,
       justified = TRUE, 
-      selected = c(200, 500, 1000, 5000, 10000)
+      selected = choices_size_default
     ),
     
     sliderInput(
@@ -55,7 +49,7 @@ mySidebarPanel <- function() {
     
     hr(),
     
-    h4("Optional"),
+    h4(strong("Optional")),
     
     # Only first two variables are going to be selected
     # The order will be first row, then column.
@@ -65,6 +59,18 @@ mySidebarPanel <- function() {
       choices = c("Bandwidth" = "bw", 
                   "Estimator" = "estimator"),
       multiple = TRUE
+    ),
+    
+    checkboxInput(
+      inputId = "log10",
+      label = strong("Log-scale"),
+      value = FALSE
+    ),
+    
+    checkboxInput(
+      inputId = "freeScale",
+      label = strong("Free y-scale"),
+      value = FALSE
     ),
     
     hr(),
@@ -80,7 +86,26 @@ mySidebarPanel <- function() {
 # Main panel -------------------------------------------------------------------
 myMainPanel <- function() {
   mainPanel(
-  uiOutput("mytext"),
-  dataTableOutput("table")
+    # Capture window size, used to save plots.
+    tags$head(
+      tags$script('
+                  var dimension = [0, 0];
+                  $(document).on("shiny:connected", function(e) {
+                    dimension[0] = window.innerWidth;
+                    dimension[1] = window.innerHeight;
+                    Shiny.onInputChange("dimension", dimension);
+                  });
+                  $(window).resize(function(e) {
+                    dimension[0] = window.innerWidth;
+                    dimension[1] = window.innerHeight;
+                    Shiny.onInputChange("dimension", dimension);
+                  });'
+                  )
+      ),  
+
+  uiOutput("plotSizeUI"),
+  uiOutput("plotUI"),
+  uiOutput("plotTitleUI"),
+  uiOutput("downloadPlotUI")
   )
 }

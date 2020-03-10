@@ -30,16 +30,8 @@ df_trim <- function(df, .group_vars, .trim_var, .quantile) {
     select(-upper_bound)
 }
 
-compute_limits <- function(x) {
-  x <- x[!is.na(x)]
-  x_iqr <- IQR(x)
-  lower <- min(x) - 0.01 * x_iqr
-  upper <- median(x) + 2.5 * x_iqr
-  c(lower, upper)
-}
-
 deduce_scale <- function(x) {
-  if ((median(x, na.rm = TRUE) / 1000) > 1) {
+  if ((quantile(x, 0.75, na.rm = TRUE)) > 1) {
     return("sec") 
   } else {
     return("ms")
@@ -50,7 +42,7 @@ deduce_scale <- function(x) {
 precision <- scales:::precision
 
 # Plotting uitls ---------------------------------------------------------------
-init_plot <- function(df, .metric) {
+initialize_plot <- function(df, .metric) {
   .metric <- as.name(.metric)
   ggplot(df,
     aes(
@@ -74,17 +66,20 @@ custom_fill <- function(alpha = 0.6) {
 }
 
 custom_theme <- function() {
-  theme_bw() + 
+  # theme_bw() + 
+  theme_gray() + 
   theme(
-    panel.grid.minor = element_blank(),
+    # panel.grid.minor = element_blank(),
+    panel.grid.minor.x = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.border = element_blank(), 
-    legend.position = "none"
+    legend.position = "none",
+    strip.background = element_blank()
   )
 }
 
 custom_scale <- function(limits = NULL,  breaks = waiver(),
-                         scale = "ms", acc = 1, log10 = FALSE) {
+                         scale = "ms", acc = 0.1, log10 = FALSE) {
   scale_func <- if (log10) scale_y_log10 else scale_y_continuous
   scale_func(
     limits = limits,
@@ -93,14 +88,28 @@ custom_scale <- function(limits = NULL,  breaks = waiver(),
   )
 }
 
-custom_facet <- function(..., nrow = 1) {
-  args <- list(...)
-  if (length(args) == 0) {
-    return(NULL)
-  } else if (length(args) == 1) {
-    facet_wrap(c(args[[1]]), nrow = nrow)
+custom_facet <- function(..., free_y, nrow = 1) {
+  
+  args <- as.list(...)
+  
+  if (!any(args %in% c("bw", "estimator"))) return(NULL)
+  
+  scales <- if (free_y) "free_y" else "fixed"
+  
+  if (length(args) == 1) {
+    col_labs <- lbls_list[[args[[1]]]]
+    
+    form <- as.formula(paste(".", args[[1]], sep = "~"))
+    facet_grid(form, scales = scales, 
+               labeller = labeller(.cols = col_labs))
+    
   } else if (length(args) == 2) {
-    facet_wrap(c(args[[1]], args[[2]]))
+    row_labs <- lbls_list[[args[[1]]]]
+    col_labs <- lbls_list[[args[[2]]]]
+    
+    form <- as.formula(paste(args[[1]], args[[2]], sep = "~"))
+    facet_grid(form, scales = scales, 
+               labeller = labeller(.cols = col_labs, .rows = row_labs))
   }
 }
 
@@ -122,17 +131,106 @@ seconds <- function(acc = 1) {
 get_label <- function(scale, acc) {
   switch(scale, 
          ms = miliseconds(acc),
-         sec = seconds(acc))
+         sec = seconds(acc),
+         scales::number_format(acc))
 }
-
 
 # Playground -------------------------------------------------------------------
 
-# estimator <- "fixed_gaussian"
-# bw <- "silverman"
-# toy_data <- data_clean %>%
-#   filter(
-#     estimator == !!estimator,
-#     bw == !! bw
+
+# Static vectors ---------------------------------------------------------------
+choices_bw_classic <- c("Silverman's rule" = "silverman",
+                        "Scott's rule" = "scott",
+                        "Sheather-Jones" = "sj",
+                        "Improved Sheather-Jones" = "isj",
+                        "Experimental" = "experimental")
+choices_bw_mixture <- c("Default" = "mixture")
+
+choices_size_sj <- c(200, 500, 1000)
+choices_size_default <- c(200, 500, 1000, 5000, 10000)
+
+# Panel grid labels
+bw_lbls <-  c("silverman" = "Silverman's rule",
+              "scott" = "Scott's rule",
+              "sj" = "Sheather-Jones",
+              "isj" = "Improved Sheather-Jones",
+              "experimental" ="Experimental",
+              "default" = "Default")
+
+estimator_lbls <- c("fixed_gaussian" = "Gaussian KDE",
+                    "adaptive_gaussian" = "Adaptive Gaussian KDE",
+                    "mixture" = "Gaussian mixture via EM")
+
+lbls_list <- list("bw" = bw_lbls, "estimator" = estimator_lbls)
+
+
+
+
+# Misc -------------------------------------------------------------------------
+
+plot_counter <- function() {
+  i <- 0
+  function() {
+    i <<- i + 1
+    i
+  }
+}
+
+
+# # Collapsable panels -----------------------------------------------------------
+# bsCollapse(
+#   id = "collapseExample",
+#   bsCollapsePanel(
+#     "Heading settings", 
+#     uiOutput("headingSettings"),
+#     style = "primary"
+#   ),
+#   bsCollapsePanel(
+#     "Axes settings",
+#     uiOutput("axesSettings"),
+#     style = "primary"
+#   ),
+#   bsCollapsePanel(
+#     "Annotation settings",
+#     uiOutput("annotSettings"),
+#     style = "primary"
+#   ),
+#   bsCollapsePanel(
+#     "General settings",
+#     uiOutput("generalSettings"),
+#     style = "primary"
 #   )
+# ),
 # 
+# # Buttons -----------------------------------------------------------------------
+# fluidRow(
+#   column(3,
+#          actionButton("applyChangesBtn", "Apply settings")),
+#   column(3,
+#          downloadButton("downloadPlot", "Save plot"))
+# ),
+# br(),br()
+
+
+# output$downloadPlot <- downloadHandler(
+#   filename = function() {
+#     name <- "test-plot"
+#     paste0(name, '.png') 
+#   },
+#   
+#   content = function(file) {
+#     png(file,
+#         width = input$pltWidth, 
+#         height = input$pltHeight,
+#         units = input$pltUnits,
+#         res = input$pltRes)
+#     grid.newpage()
+#     grid.draw(g)
+#     print(plt, newpage = FALSE)
+#     dev.off()
+#   }
+# )
+
+# png("output/project4b.png", width = 10000, height = 7000, res = 1300)
+# print(plt)
+# dev.off()
