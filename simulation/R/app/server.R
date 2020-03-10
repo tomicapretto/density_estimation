@@ -1,11 +1,12 @@
 # Load libraries ---------------------------------------------------------------
 
-library(shiny)
-library(shinyWidgets)
-library(shinyBS)
+pkgs <- c("shiny", "shinyBS", "shinyWidgets", "ggplot2", "dplyr")
+check_pkgs(pkgs)
+
 source("utils.R")
 source("server/helpers.R")
 
+# Init plot counter
 count_plot <- plot_counter()
 
 # Load data --------------------------------------------------------------------
