@@ -12,6 +12,7 @@ check_pkgs <- function(pkgs, quietly = FALSE) {
 
 pkgs <- c("shiny", "shinyBS", "shinyWidgets", "ggplot2", "dplyr")
 check_pkgs(pkgs)
+
 source("utils.R")
 source("server/helpers.R")
 
