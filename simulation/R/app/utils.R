@@ -1,145 +1,8 @@
-library(dplyr)
-library(ggplot2)
-
-
 # Colors -----------------------------------------------------------------------
 DARK_GRAY <- "#2d3436"
 
-# Data wrangling utils ---------------------------------------------------------
-df_filter <- function(df, .estimator, .bw, .size) {
-  df %>%
-    filter(
-      estimator %in% .estimator,
-      bw %in% .bw,
-      size %in% .size
-    )
-}
-
-df_trim <- function(df, .group_vars, .trim_var, .quantile) {
-
-  .group_vars <- purrr::map(.group_vars, as.name)
-  .trim_var <- as.name(.trim_var)
-  
-  df %>%
-    group_by(!!!.group_vars) %>%
-    mutate(
-      upper_bound = quantile(!!.trim_var, .quantile, na.rm = TRUE)
-    ) %>%
-    mutate(
-      !!.trim_var := ifelse(!!.trim_var >= upper_bound, NA, !!.trim_var)
-    ) %>%
-    select(-upper_bound)
-}
-
-deduce_scale <- function(x) {
-  if ((quantile(x, 0.75, na.rm = TRUE)) > 1) {
-    return("sec") 
-  } else {
-    return("ms")
-  }
-}
-
-# Specify accuracy by default
-precision <- scales:::precision
-
-# Plotting uitls ---------------------------------------------------------------
-initialize_plot <- function(df, .metric) {
-  .metric <- as.name(.metric)
-  ggplot(df,
-    aes(
-      x = factor(size),
-      y = !! .metric, 
-      fill = factor(size)
-    )
-  )
-}
-
-add_boxplot <- function(outlier.shape = 19) {
-  geom_boxplot(
-    outlier.fill = alpha(DARK_GRAY, 0.3),
-    outlier.color = alpha(DARK_GRAY, 0.3),
-    outlier.shape = outlier.shape
-  )
-}
-
-custom_fill <- function(alpha = 0.6) {
-  scale_fill_viridis_d(alpha = alpha)
-}
-
-custom_theme <- function() {
-  # theme_bw() + 
-  theme_gray() + 
-  theme(
-    # panel.grid.minor = element_blank(),
-    panel.grid.minor.x = element_blank(),
-    panel.grid.major.x = element_blank(),
-    panel.border = element_blank(), 
-    legend.position = "none",
-    strip.background = element_blank()
-  )
-}
-
-custom_scale <- function(limits = NULL,  breaks = waiver(),
-                         scale = "ms", acc = 0.1, log10 = FALSE) {
-  scale_func <- if (log10) scale_y_log10 else scale_y_continuous
-  scale_func(
-    limits = limits,
-    breaks = breaks,
-    labels = get_label(scale, acc)
-  )
-}
-
-custom_facet <- function(..., free_y, nrow = 1) {
-  
-  args <- as.list(...)
-  
-  if (!any(args %in% c("bw", "estimator"))) return(NULL)
-  
-  scales <- if (free_y) "free_y" else "fixed"
-  
-  if (length(args) == 1) {
-    col_labs <- lbls_list[[args[[1]]]]
-    
-    form <- as.formula(paste(".", args[[1]], sep = "~"))
-    facet_grid(form, scales = scales, 
-               labeller = labeller(.cols = col_labs))
-    
-  } else if (length(args) == 2) {
-    row_labs <- lbls_list[[args[[1]]]]
-    col_labs <- lbls_list[[args[[2]]]]
-    
-    form <- as.formula(paste(args[[1]], args[[2]], sep = "~"))
-    facet_grid(form, scales = scales, 
-               labeller = labeller(.cols = col_labs, .rows = row_labs))
-  }
-}
-
-# Helpers ----------------------------------------------------------------------
-miliseconds <- function(acc = 1) {
-  scales::number_format(
-    accuracy = acc,
-    scale = 1000,
-    suffix = " ms")
-}
-
-seconds <- function(acc = 1) {
-  scales::number_format(
-    accuracy = acc,
-    scale = 1,
-    suffix = " secs")
-}
-
-get_label <- function(scale, acc) {
-  switch(scale, 
-         ms = miliseconds(acc),
-         sec = seconds(acc),
-         scales::number_format(acc))
-}
-
-# Playground -------------------------------------------------------------------
-
-
 # Static vectors ---------------------------------------------------------------
+# Pre-defined choices for input fields.
 choices_bw_classic <- c("Silverman's rule" = "silverman",
                         "Scott's rule" = "scott",
                         "Sheather-Jones" = "sj",
@@ -149,6 +12,24 @@ choices_bw_mixture <- c("Default" = "mixture")
 
 choices_size_sj <- c(200, 500, 1000)
 choices_size_default <- c(200, 500, 1000, 5000, 10000)
+
+# Density options
+pdfNames <- c("gaussian_1", "gaussian_2", "gmixture_1", "gmixture_2",
+                     "gmixture_3", "gmixture_4", "gmixture_5", "gamma_1",
+                     "gamma_2", "beta_1", "logn_1")
+
+pdfCodes <- c("N(0,1)", "N(0, 2)", 
+                     "\\frac{1}{2}N(-12, \\frac{1}{2}) + \\frac{1}{2}N(12, \\frac{1}{2})", 
+                     "\\frac{1}{2} N(0, \\frac{1}{10}) + \\frac{1}{2} N(5, 1)",
+                     "\\frac{2}{3} N(0, 1) + \\frac{1}{3} N(0, 0.1)",
+                     "\\frac{3}{4} N(0, 1) + \\frac{1}{4} N(1.5, \\frac{1}{3})",
+                     "\\frac{3}{5} N(3.5, \\frac{1}{2}) + \\frac{2}{5} N(9, 1.5)",
+                     "\\Gamma (k = 1, \\theta = 1)",
+                     "\\Gamma (k = 2, \\theta = 1)",
+                     "\\beta (a = 2.5, b = 1.5)",
+                     "\\text{Log}N(0, 1)")
+
+pdf_choices <- setNames(pdfNames, pdfCodes)
 
 # Panel grid labels
 bw_lbls <-  c("silverman" = "Silverman's rule",
@@ -165,10 +46,7 @@ estimator_lbls <- c("fixed_gaussian" = "Gaussian KDE",
 lbls_list <- list("bw" = bw_lbls, "estimator" = estimator_lbls)
 
 
-
-
 # Misc -------------------------------------------------------------------------
-
 plot_counter <- function() {
   i <- 0
   function() {
@@ -177,61 +55,39 @@ plot_counter <- function() {
   }
 }
 
+check_pkgs <- function(pkgs, quietly = FALSE) { 
+  
+  lapply(pkgs, FUN = function(x) {
+    if (!require(x, character.only = TRUE, quietly = quietly)) 
+      install.packages(x, dependencies = TRUE, 
+                       repos = "http://cran.us.r-project.org")
+    library(x, character.only = TRUE, quietly = quietly)
+  })
+  
+}
 
-# # Collapsable panels -----------------------------------------------------------
-# bsCollapse(
-#   id = "collapseExample",
-#   bsCollapsePanel(
-#     "Heading settings", 
-#     uiOutput("headingSettings"),
-#     style = "primary"
-#   ),
-#   bsCollapsePanel(
-#     "Axes settings",
-#     uiOutput("axesSettings"),
-#     style = "primary"
-#   ),
-#   bsCollapsePanel(
-#     "Annotation settings",
-#     uiOutput("annotSettings"),
-#     style = "primary"
-#   ),
-#   bsCollapsePanel(
-#     "General settings",
-#     uiOutput("generalSettings"),
-#     style = "primary"
-#   )
-# ),
-# 
-# # Buttons -----------------------------------------------------------------------
-# fluidRow(
-#   column(3,
-#          actionButton("applyChangesBtn", "Apply settings")),
-#   column(3,
-#          downloadButton("downloadPlot", "Save plot"))
-# ),
-# br(),br()
+window_capture_script <- '
+var dimension = [0, 0];
+$(document).on("shiny:connected", function(e) {
+  dimension[0] = window.innerWidth;
+  dimension[1] = window.innerHeight;
+  Shiny.onInputChange("dimension", dimension);
+});
+$(window).resize(function(e) {
+  dimension[0] = window.innerWidth;
+  dimension[1] = window.innerHeight;
+  Shiny.onInputChange("dimension", dimension);
+});'
 
-
-# output$downloadPlot <- downloadHandler(
-#   filename = function() {
-#     name <- "test-plot"
-#     paste0(name, '.png') 
-#   },
-#   
-#   content = function(file) {
-#     png(file,
-#         width = input$pltWidth, 
-#         height = input$pltHeight,
-#         units = input$pltUnits,
-#         res = input$pltRes)
-#     grid.newpage()
-#     grid.draw(g)
-#     print(plt, newpage = FALSE)
-#     dev.off()
-#   }
-# )
-
-# png("output/project4b.png", width = 10000, height = 7000, res = 1300)
-# print(plt)
-# dev.off()
+latex_input_script <- "
+{
+item:   function(item, escape) { 
+  var html = katex.renderToString(item.label);
+  return '<div>' + html + '</div>'; 
+},
+option: function(item, escape) { 
+  var html = katex.renderToString(item.label);
+  return '<div>' + html + '</div>'; 
+}
+}
+                              "

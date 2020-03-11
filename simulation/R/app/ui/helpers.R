@@ -1,14 +1,21 @@
-source("utils.R")
-
 # Sidebar panel ----------------------------------------------------------------
 mySidebarPanel <- function() {
   sidebarPanel(
+    
+    h4(strong("Mandatory")),
     
     radioGroupButtons(
       inputId = "metric",
       label = "Select a metric",
       choices = c("Time" = "time", "Error" = "error"),
       justified = TRUE
+    ),
+
+    selectizeInput(
+      inputId = "pdf",
+      label = "Choose a density", 
+      multiple = TRUE,
+      choices = NULL
     ),
     
     selectInput(
@@ -33,8 +40,13 @@ mySidebarPanel <- function() {
       inputId = "size",
       label = "Sample size(s)",
       choices = choices_size_default,
+      selected = choices_size_default,
       justified = TRUE, 
-      selected = choices_size_default
+      checkIcon = list(
+        yes = tags$i(class = "fa fa-circle", 
+                     style = "color: steelblue"),
+        no = tags$i(class = "fa fa-circle-o", 
+                    style = "color: steelblue"))
     ),
     
     sliderInput(
@@ -57,7 +69,8 @@ mySidebarPanel <- function() {
       inputId = "facetVars",
       label = "Facetting variables",
       choices = c("Bandwidth" = "bw", 
-                  "Estimator" = "estimator"),
+                  "Estimator" = "estimator",
+                  "Density" = "pdf"),
       multiple = TRUE
     ),
     
@@ -84,24 +97,30 @@ mySidebarPanel <- function() {
 
 
 # Main panel -------------------------------------------------------------------
+
+# Window size captures script
+# The first part takes size when the app is connected
+# The second part takes size when a resize is performed
 myMainPanel <- function() {
   mainPanel(
+    
     # Capture window size, used to save plots.
     tags$head(
-      tags$script('
-                  var dimension = [0, 0];
-                  $(document).on("shiny:connected", function(e) {
-                    dimension[0] = window.innerWidth;
-                    dimension[1] = window.innerHeight;
-                    Shiny.onInputChange("dimension", dimension);
-                  });
-                  $(window).resize(function(e) {
-                    dimension[0] = window.innerWidth;
-                    dimension[1] = window.innerHeight;
-                    Shiny.onInputChange("dimension", dimension);
-                  });'
-                  )
-      ),  
+      tags$script(window_capture_script),
+    ),  
+    
+    # Render Latex
+    tags$head(
+      tags$link(
+        rel = "stylesheet", 
+        href = "https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css", 
+        integrity = "sha384-9tPv11A+glH/on/wEu99NVwDPwkMQESOocs/ZGXPoIiLE8MU/qkqUcZ3zzL+6DuH", 
+        crossorigin = "anonymous"),
+      tags$script(
+        src = "https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.js", 
+        integrity = "sha384-U8Vrjwb8fuHMt6ewaCy8uqeUXv4oitYACKdB0VziCerzt011iQ/0TqlSlv8MReCm", 
+        crossorigin = "anonymous")
+    ),
 
   uiOutput("plotSizeUI"),
   uiOutput("plotUI"),

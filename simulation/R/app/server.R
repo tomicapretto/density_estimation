@@ -1,18 +1,4 @@
 # Load libraries ---------------------------------------------------------------
-check_pkgs <- function(pkgs, quietly = FALSE) { 
-  
-  lapply(pkgs, FUN = function(x) {
-    if (!require(x, character.only = TRUE, quietly = quietly)) 
-      install.packages(x, dependencies = TRUE, 
-                       repos = "http://cran.us.r-project.org")
-    library(x, character.only = TRUE, quietly = quietly)
-  })
-  
-}
-
-pkgs <- c("shiny", "shinyBS", "shinyWidgets", "ggplot2", "dplyr")
-check_pkgs(pkgs)
-
 source("utils.R")
 source("server/helpers.R")
 
@@ -27,8 +13,18 @@ df_static <- readRDS("data/data.rds")
 function(input, output, session) {
   session$onSessionEnded(stopApp)
   
+  # Create reactive store and point simulation results
   store <- reactiveValues()
   store$df_static <- df_static
+  
+  # Produce latex-like output to input simulated `pdf``
+  updateSelectizeInput(
+    session = session, 
+    inputId = "pdf",
+    choices = pdf_choices,
+    selected = pdf_choices[[1]],
+    options = list(render = I(latex_input_script))
+  )
   
   # Update `bw` input according to `estimator`.
   observeEvent(
@@ -61,7 +57,8 @@ function(input, output, session) {
     
     # Plot data and settings
     # Filter
-    args <- list(store$df_static, input$estimator, input$bw, as.numeric(input$size))
+    args <- list(store$df_static, input$pdf, 
+                 input$estimator, input$bw, as.numeric(input$size))
     store$df_filtered <- do.call(df_filter, args)
     
     # Trim
@@ -76,13 +73,25 @@ function(input, output, session) {
     } else {
       ""
     }
+    
+    # Get accuracy
+    # TODO: Improve this pls! Not always working nice.y
+    if (scale == "ms") {
+      acc_var <- store$df_trimmed[[input$metric]] * 100
+    } else if (scale == "sec") {
+      acc_var <- store$df_trimmed[[input$metric]]
+    } else {
+      acc_var <- store$df_trimmed[[input$metric]] / 10
+    }
+    
+    acc <- precision(acc_var)
 
     # Plot it!
     store$plt <- initialize_plot(store$df_trimmed, isolate(input$metric)) +
       add_boxplot() +
       custom_fill() +
       custom_theme() +
-      custom_scale(scale = scale, log10 = isolate(input$log10)) +
+      custom_scale(scale = scale, acc = acc, log10 = isolate(input$log10)) +
       custom_facet(isolate(input$facetVars), free_y = isolate(input$freeScale)) + 
       labs(x = "Size", y = stringr::str_to_sentence(isolate(input$metric)))
   
@@ -92,6 +101,7 @@ function(input, output, session) {
     res = 120)
   })
   
+  # Add title to plot
   observeEvent(input$plotTitleButton, {
     store$plt <- store$plt +
       ggtitle(input$plotTitle) +
@@ -99,15 +109,13 @@ function(input, output, session) {
         plot.title = element_text(size = input$plotTitleSize,
                                   hjust = input$plotTitlePos)
       )
-    
     output$plot <- renderPlot({
       store$plt
     },
     res = 120)
   })
   
-  # Output plot
-  
+  # Plot size displayed. It is used when saving too.
   observeEvent(
     input$getPlot, {
       output$plotSizeUI <- renderUI({
@@ -138,6 +146,8 @@ function(input, output, session) {
       })
     }, once = TRUE)
   
+  
+  # Output plot according to size setings
   observeEvent(
     input$getPlot, {
       output$plotUI <- renderUI({
@@ -150,9 +160,13 @@ function(input, output, session) {
       })
   })
   
+  # Generate several UI components only after a plot is generated.
+  # * Download button
+  # * Title settings
+  # * Apply title settings button
+  # * Collpsable panel
   observeEvent(
     input$getPlot, {
-      
       output$downloadPlotUI <- renderUI({
         downloadButton("downloadPlot", "Save plot")
       })
@@ -174,6 +188,7 @@ function(input, output, session) {
         )
       })
       
+      # 
       output$plotTitleButtonUI <- renderUI({
         actionButton(
           inputId = "plotTitleButton",
@@ -194,6 +209,8 @@ function(input, output, session) {
       
   }, once = TRUE)
   
+  # Configure plot download handler.
+  # It uses mainPanel dimensions to calculate plot width.
   output$downloadPlot <- downloadHandler(
     filename = function() {
       name <- paste0("plot", count_plot())
@@ -210,6 +227,4 @@ function(input, output, session) {
       dev.off()
     }
   )
-  
-
 }

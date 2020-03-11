@@ -15,3 +15,13 @@ The folder `notebooks` contain the following set of Jupyter Notebooks:
 * [TODO] `05_method_comparison`
 * [TODO] `06_misc`
 
+## Shiny application
+
+It would have been cumbersome to generate graphics for each possible combination of the results in the simulation. That's why a [Shiny](https://shiny.rstudio.com/) application has been created to create visualizations interactively. It lives under `simulation/R/app`. 
+
+It is also possible, and simple, to run the application locally with 
+
+```
+# install.packages("shiny")
+shiny::runGitHub("density_estimation", username = "tomicapretto", subdir = "simulation/R/app/")
+```
