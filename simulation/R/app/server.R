@@ -26,6 +26,14 @@ function(input, output, session) {
     options = list(render = I(latex_input_script))
   )
   
+  updateSelectizeInput(
+    session = session, 
+    inputId = "pdfPanel2",
+    choices = pdf_choices,
+    selected = pdf_choices[[1]],
+    options = list(render = I(latex_input_script))
+  )
+  
   # Update `bw` input according to `estimator`.
   observeEvent(
     input$estimator, {
@@ -104,7 +112,7 @@ function(input, output, session) {
   # Add title to plot
   observeEvent(input$plotTitleButton, {
     store$plt <- store$plt +
-      ggtitle(input$plotTitle) +
+      ggtitle(input$plotTitle) 
       theme(
         plot.title = element_text(size = input$plotTitleSize,
                                   hjust = input$plotTitlePos)
@@ -213,18 +221,64 @@ function(input, output, session) {
   # It uses mainPanel dimensions to calculate plot width.
   output$downloadPlot <- downloadHandler(
     filename = function() {
-      name <- paste0("plot", count_plot())
+      if (is.null(input$plotTitle)) {
+        name <- paste0("plot", count_plot())
+      } else if (input$plotTitle == "") {
+        name <- paste0("plot", count_plot())
+      } else {
+        name <- stringr::str_replace_all(input$plotTitle, " ", "_")
+      }
       paste0(name, '.png')
     },
 
     content = function(file) {
       png(
         file, 
-        width = as.numeric(input$plotWidth / 100) * input$dimension[1],
+        width = as.numeric(input$plotWidth / 100) * (input$dimension[1] * 0.65), # Sidebar occupies 33% of width
         height = input$plotHeight, 
         res = 120)
       print(store$plt)
       dev.off()
     }
   )
+  
+  # outputOptions(output, "plotTitle", suspendWhenHidden = FALSE)
+  
+  # Second panel -----------------------------------------------------------------
+  observeEvent(input$getPlotPanel2, {
+    # be careful with this global assignment
+    plot2Path <<- paste0("data/heatmaps/", 
+                   input$metricPanel2, "_",
+                   input$pdfPanel2)
+
+    if (input$excludeSJ)  plot2Path <<- paste0(plot2Path, "_no_sj")
+    plot2Path <<- paste0(plot2Path, ".png")
+
+    output$plotPanel2 <- renderImage({
+      return(
+        list(
+          src = plot2Path,
+          contentType = "image/png",
+          width = input$dimension[1] * 0.65 # Sidebar occupies 33% of width
+        )
+      )
+    }, deleteFile = FALSE)
+    
+    output$downloadPlotPanel2UI <- renderUI({
+      downloadButton("downloadPlotPanel2", "Save plot")
+    })
+    
+  })
+  
+  
+  output$downloadPlotPanel2 <- downloadHandler(
+    filename = function() {
+      basename(plot2Path)
+    },
+    
+    content = function(file) {
+      file.copy(plot2Path, file)
+    }
+  )
+  
 }

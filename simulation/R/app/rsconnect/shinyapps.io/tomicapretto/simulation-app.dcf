@@ -1,0 +1,12 @@
+name: simulation-app
+title: simulation-app
+username:
+account: tomicapretto
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1942377
+bundleId: 2928881
+url: https://tomicapretto.shinyapps.io/simulation-app/
+when: 1585251674.65702
+asMultiple: FALSE
+asStatic: FALSE
