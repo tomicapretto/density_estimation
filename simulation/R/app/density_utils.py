@@ -293,8 +293,8 @@ def _select_bw_method(x, method="isj"):
 
     if method_lower not in _bw_methods.keys():
         error_string = "Unrecognized bandwidth method.\n"
-        error_string += f"Input is: {method}.\n"
-        error_string += f"Expected one of: {list(_bw_methods.keys())}."
+        # error_string += f"Input is: {method}.\n"
+        # error_string += f"Expected one of: {list(_bw_methods.keys())}."
         raise ValueError(error_string)
         
     bw = _bw_methods[method_lower](x)
@@ -306,40 +306,40 @@ def get_bw(x, bw):
             return bw
         else:
             error_string = "Numeric `bw` must be positive.\n"
-            error_string += f"Input: {bw:.4f}."
+            # error_string += f"Input: {bw:.4f}."
             raise ValueError(error_string)
 
     elif isinstance(bw, str):
         return _select_bw_method(x, bw)
     else:
         error_string = "Unrecognized `bw` argument.\n"
-        error_string += f"Input {bw} is of type {type(bw)}.\n"
-        error_string += f"Expected a positive numeric or one of the following strings: {list(_bw_methods.keys())}." 
+        # error_string += f"Input {bw} is of type {type(bw)}.\n"
+        # error_string += f"Expected a positive numeric or one of the following strings: {list(_bw_methods.keys())}." 
         raise ValueError(error_string)
 
 def _check_type(x):
     
     if not isinstance(x, (list, np.ndarray)):
-        error_str = f"`x` is of the wrong type.\n"
-        error_str += f"Can't produce a density estimator for {type(x)}.\n"
-        error_str += f"Please input a numeric list or numpy array."
+        error_str = "`x` is of the wrong type.\n"
+        # error_str += f"Can't produce a density estimator for {type(x)}.\n"
+        # error_str += f"Please input a numeric list or numpy array."
         raise ValueError(error_str)
     
     # Will raise an error if `x` is not numeric
     x = np.asfarray(x)
     
     if x.ndim != 1:
-        error_str = f"Unsupported dimension number.\n"
-        error_str += f"Density estimator only works with 1-dimensional data, "
-        error_str += f"not {x.ndim}."
+        error_str = "Unsupported dimension number.\n"
+        error_str += "Density estimator only works with 1-dimensional data, "
+        # error_str += f"not {x.ndim}."
         raise ValueError(error_str)
     
     return x
 
 def _len_warning(x):
     if x < 50: 
-        warn_str = f"The estimation may be unstable for such a few data points.\n"
-        warn_str += f"Try a histogram or dotplot instead."
+        warn_str = "The estimation may be unstable for such a few data points.\n"
+        warn_str += "Try a histogram or dotplot instead."
         warn(warn_str, Warning)
 
 def kde_convolution(x, bw, grid_len, grid_min, grid_max, bound_correction):

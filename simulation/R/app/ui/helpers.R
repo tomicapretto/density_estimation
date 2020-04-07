@@ -7,9 +7,7 @@ mySidebarPanel <- function() {
     # Boxplot tab 
     conditionalPanel(
       "input.tabSelected == 1",
-      
-      h4(strong("Mandatory")),
-      
+
       radioGroupButtons(
         inputId = "metric",
         label = "Select a metric",
@@ -65,8 +63,6 @@ mySidebarPanel <- function() {
         post = "%" 
       ),
       
-      hr(),
-      
       h4(strong("Optional")),
       
       # Only first two variables are going to be selected
@@ -80,23 +76,28 @@ mySidebarPanel <- function() {
         multiple = TRUE
       ),
       
-      checkboxInput(
-        inputId = "log10",
-        label = strong("Log-scale"),
-        value = FALSE
-      ),
-      
-      checkboxInput(
-        inputId = "freeScale",
-        label = strong("Free y-scale"),
-        value = FALSE
-      ),
-      
-      hr(),
-      
-      actionButton(
-        inputId = "getPlot", 
-        label = "Plot"
+      fluidRow(
+        column(
+          width = 6,
+          checkboxInput(
+            inputId = "log10",
+            label = strong("Log-scale"),
+            value = FALSE
+          ),
+          
+          checkboxInput(
+            inputId = "freeScale",
+            label = strong("Free y-scale"),
+            value = FALSE
+          )
+        ),
+        column(
+          width = 6,
+          actionButton(
+            inputId = "getPlot", 
+            label = "Plot"
+          )
+        )
       )
     ),
     
@@ -129,7 +130,63 @@ mySidebarPanel <- function() {
         inputId = "getPlotPanel2",
         label = "Plot"
       )
-    )
+    ),
+    
+    conditionalPanel(
+      "input.tabSelected == 3",
+      
+      selectInput(
+        inputId = "contDist", 
+        label = "Select a distribution",
+        choices = c("Normal" = "norm",
+                   "T-Student" = "t",
+                   "Gamma" = "gamma",
+                   "Exponential" = "exp",
+                   "Beta" = "beta",
+                   "Log Normal" = "lnorm",
+                   "Cauchy" = "cauchy",
+                   "Weibull" = "weibull",
+                   "Uniform" = "unif")
+      ),
+      
+      uiOutput("contParamsUI"),
+      
+      numericInput(
+        inputId = "contSampleSize", 
+        label = "Sample size", 
+        value = 200, 
+        min = 50, 
+        max = 10000, 
+        step = 1),
+      
+      hr(),
+
+      selectInput(
+        inputId = "densityEstimator",
+        label = "Select estimator",
+        choices = c("Gaussian KDE" = "gaussian_kde",
+                    "Adaptive Gaussian KDE" = "adaptive_kde",
+                    "Gaussian mixture via EM" = "mixture_kde")
+      ),
+
+      uiOutput("bwMethodUI"),
+      checkboxInput(
+        inputId = "extendLimits",
+        label = "Extend variable domain", 
+        value = TRUE
+      ),
+      
+      checkboxInput(
+        inputId = "boundCorrection",
+        label = "Perform boundary correction", 
+        value = FALSE
+      ),
+      actionButton(
+        "button3",
+        label = "Go!!"
+      )
+    ),
+    width = 3
   )
 }
 
@@ -159,6 +216,14 @@ tabPanel2 <- function() {
   )
 }
 
+tabPanel3 <- function() {
+  tabPanel(
+    title = "Estimators",
+    value = 3,
+    uiOutput("plotPanel3UI")
+  )
+}
+
 myMainPanel <- function() {
   mainPanel(
     # Capture window size, used to save plots.
@@ -180,7 +245,9 @@ myMainPanel <- function() {
     tabsetPanel(
       tabPanel1(),
       tabPanel2(),
+      tabPanel3(),
       id = "tabSelected"
-    )
+    ),
+    width = 9
   )
 }
