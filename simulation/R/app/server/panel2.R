@@ -1,3 +1,11 @@
+updateSelectizeInput(
+  session = session, 
+  inputId = "pdfPanel2",
+  choices = pdf_choices,
+  selected = pdf_choices[[1]],
+  options = list(render = I(latex_input_script))
+)
+
 observeEvent(input$getPlotPanel2, {
   # be careful with this global assignment
   plot2Path <<- paste0("data/heatmaps/", 

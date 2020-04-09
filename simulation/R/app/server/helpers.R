@@ -62,10 +62,8 @@ custom_fill <- function(alpha = 0.6) {
 }
 
 custom_theme <- function() {
-  # theme_bw() + 
   theme_gray() + 
     theme(
-      # panel.grid.minor = element_blank(),
       panel.grid.minor.x = element_blank(),
       panel.grid.major.x = element_blank(),
       panel.border = element_blank(), 
@@ -87,7 +85,6 @@ custom_scale <- function(limits = NULL,  breaks = waiver(),
 custom_facet <- function(..., free_y, nrow = 1) {
   
   args <- as.list(...)
-  
   
   if (!any(args %in% c("bw", "estimator", "pdf"))) return(NULL)
   
@@ -112,13 +109,6 @@ custom_facet <- function(..., free_y, nrow = 1) {
 
 # Misc -------------------------------------------------------------------------
 get_bw_choices <- function(x) {
-  
-  # Old: nice, but drop names.
-  # f <- function (x) switch(x, "mixture" = choices_bw_mixture, choices_bw_classic)
-  # l <- lapply(x, f)
-  # Reduce(union, l)
-  
-  # New:
   f <- function (x) switch(x, "mixture" = choices_bw_mixture, choices_bw_classic)
   vec <- unlist(lapply(x, f)) 
   vec[!duplicated(vec)]
@@ -150,7 +140,6 @@ get_label <- function(scale, acc) {
          sec = seconds(acc),
          scales::number_format(acc))
 }
-
 
 # Continuous variables arguments -----------------------------------------------
 labels_cont <- list(
@@ -206,7 +195,6 @@ all_equal_length <- function(...) {
 }
 
 numeric_params <- function(label, value, min = NA, max = NA, step = NA, prefix) {
-  
   if (all(is.na(min))) min <- rep(NA, length(label))
   if (all(is.na(max))) max <- rep(NA, length(label))
   if (all(is.na(step))) step <- rep(NA, length(label))
@@ -228,21 +216,22 @@ distribution_parameters_cont <- function(distribution, prefix = "contDist") {
 } 
 
 # Plot functions ---------------------------------------------------------------
-
 get_density_params <- function(input) {
   
   dDist<- paste0("d", input$contDist)
   
-  distParams <- switch(input$contDist,
-                       "norm"  = list(input$contDistInput1, input$contDistInput2),
-                       "t"     = list(input$contDistInput1),
-                       "gamma" = list(input$contDistInput1, input$contDistInput2),
-                       "exp"   = list(input$contDistInput1),
-                       "beta"  = list(input$contDistInput1, input$contDistInput2),
-                       "lnorm" = list(input$contDistInput1, input$contDistInput2),
-                       "cauchy" = list(input$contDistInput1, input$contDistInput2),
-                       "weibull" = list(input$contDistInput1, input$contDistInput2),
-                       "unif"  = list(input$contDistInput1, input$contDistInput2))
+  distParams <- switch(
+    input$contDist,
+    "norm"  = list(input$contDistInput1, input$contDistInput2),
+    "t"     = list(input$contDistInput1),
+    "gamma" = list(input$contDistInput1, input$contDistInput2),
+    "exp"   = list(input$contDistInput1),
+    "beta"  = list(input$contDistInput1, input$contDistInput2),
+    "lnorm" = list(input$contDistInput1, input$contDistInput2),
+    "cauchy" = list(input$contDistInput1, input$contDistInput2),
+    "weibull" = list(input$contDistInput1, input$contDistInput2),
+    "unif"  = list(input$contDistInput1, input$contDistInput2)
+    )
   
   what <- paste0("r", input$contDist)
   rvs <- do.call(what, c(list(input$contSampleSize), distParams))
@@ -282,7 +271,6 @@ get_density_params <- function(input) {
   params = list("rvs" = rvs, "x_range" = x_range, "y_range" = y_range,
                 "x_estimation" = estimation[[1]], "y_estimation" = estimation[[2]],
                 "x_true" = x_true, "y_true" = y_true)
-  
   return(params)
 }
 
@@ -320,9 +308,7 @@ density_plot_generator <- function(params) {
   return(f)
 }
 
-
 # Initialize python ------------------------------------------------------------
-
 use_python_custom = function(path) {
   tryCatch({
     reticulate::use_python(
@@ -371,7 +357,7 @@ init_python_custom <- function(input) {
   
       tryCatch({
         msg <- reticulate::py_capture_output(
-          reticulate::source_python("check_pkgs.py"))
+          reticulate::source_python("python/check_pkgs.py"))
         showNotification(
           HTML(gsub("\n","<br/>", msg)),
           type = "message",
@@ -386,7 +372,7 @@ init_python_custom <- function(input) {
         return(invisible(NULL))
       })
       incProgress(0.33, detail = "Loading functions...")
-      reticulate::source_python('density_utils.py', envir = globalenv())
+      reticulate::source_python("python/density_utils.py", envir = globalenv())
       incProgress(0.34, detail = "Done!")
     }
   )
@@ -416,7 +402,7 @@ init_python_shiny <- function(input) {
         
         incProgress(0.2, detail = "Loading functions...")
         reticulate::source_python(
-          file = "density_utils.py", 
+          file = "python/density_utils.py", 
           envir = globalenv())
         incProgress(0.2, detail = "Done!")
       }
@@ -437,6 +423,6 @@ init_python_shiny <- function(input) {
 
 # Restart session --------------------------------------------------------------
 restart_r <- function() if (tolower(.Platform$GUI) == "rstudio") {
-  .rs.restartR()
   rm(list = ls())
+  .rs.restartR()
 }

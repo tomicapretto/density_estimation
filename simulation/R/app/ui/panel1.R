@@ -4,21 +4,21 @@ tabPanel(
   sidebarLayout(
     sidebarPanel(
       radioGroupButtons(
-        inputId = "metric",
+        inputId = "boxplots_metric",
         label = "Select a metric",
         choices = c("Time" = "time", "Error" = "error"),
         justified = TRUE
       ),
       
       selectizeInput(
-        inputId = "pdf",
+        inputId = "boxplots_pdf",
         label = "Choose a density", 
         multiple = TRUE,
         choices = NULL
       ),
       
       selectInput(
-        inputId = "estimator", 
+        inputId = "boxplots_estimator", 
         label = "Estimator(s)",
         choices = c("Gaussian KDE" = "fixed_gaussian", 
                     "Adaptive Gaussian KDE" = "adaptive_gaussian", 
@@ -28,7 +28,7 @@ tabPanel(
       ),
       
       selectInput(
-        inputId = "bw",
+        inputId = "boxplots_bw",
         label = "Bandwidth(s)",
         choices = choices_bw_classic,
         selected = choices_bw_classic[[1]],
@@ -36,7 +36,7 @@ tabPanel(
       ),
       
       checkboxGroupButtons(
-        inputId = "size",
+        inputId = "boxplots_size",
         label = "Sample size(s)",
         choices = choices_size_default,
         selected = choices_size_default,
@@ -45,7 +45,7 @@ tabPanel(
       ),
       
       sliderInput(
-        inputId = "trimPct",
+        inputId = "boxplots_trim_pct",
         label = "Right tail trimming",
         min = 0,
         max = 10,
@@ -59,7 +59,7 @@ tabPanel(
       # Only first two variables are going to be selected
       # The order will be first row, then column.
       selectInput(
-        inputId = "facetVars",
+        inputId = "boxplots_facet_vars",
         label = "Facetting variables",
         choices = c("Bandwidth" = "bw", 
                     "Estimator" = "estimator",
@@ -71,7 +71,7 @@ tabPanel(
         column(
           width = 6,
           checkboxInput(
-            inputId = "log10",
+            inputId = "boxplots_log10",
             label = strong("Log scale"),
             value = FALSE
           )
@@ -79,23 +79,23 @@ tabPanel(
         column(
           width = 6,
           checkboxInput(
-            inputId = "freeScale",
+            inputId = "boxplots_free_y",
             label = strong("Free scale"),
             value = FALSE
           )
         )
       ),
       actionButton(
-        inputId = "getPlot", 
+        inputId = "boxplots_plot_btn", 
         label = "Plot"
       ),
       width = 3
     ),
     mainPanel(
-      uiOutput("plotSizeUI"),
-      uiOutput("plotUI"),
-      uiOutput("plotTitleUI"),
-      uiOutput("downloadPlotUI"),
+      uiOutput("boxplots_plot_size_UI"),
+      uiOutput("boxplots_plot_UI"),
+      uiOutput("boxplots_plot_title_UI"),
+      uiOutput("boxplots_download_UI"),
       width = 9
     )
   )

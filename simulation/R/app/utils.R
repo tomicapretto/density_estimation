@@ -118,7 +118,7 @@ is_valid_path <- function(path) {
   return(TRUE)
 }
 
-choose_directory = function(caption = "Select data directory") {
+choose_directory <- function(caption = "Select data directory") {
   if (exists('choose.dir', 'package:utils')) {
     choose.dir(caption = caption) 
   } else {

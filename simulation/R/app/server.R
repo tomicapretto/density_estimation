@@ -2,7 +2,7 @@
 source("utils.R")
 source("server/helpers.R")
 
-# Init plot counter
+# Initialize plot counter
 count_plot <- plot_counter()
 count_plot_dens <- plot_counter()
 

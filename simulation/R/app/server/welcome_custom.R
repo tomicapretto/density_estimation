@@ -1,6 +1,6 @@
 showModal(
   modalDialog(
-  title = "Specify your Python 3 directory",
+  title = "Python 3 directory",
   h4(strong("Select a directory")),
   fluidRow(
     column(
@@ -24,7 +24,7 @@ showModal(
   ),
   footer = tagList(
     p("The density estimator panel is not available if you do not have Python 3.x"),
-    p("Numpy, scipy and statsmodels are", strong("required")),
+    p("Numpy and Scipy are", strong("required")),
     actionButton("python_cancel_btn", "Dismiss"),
     actionButton("python_add_path_btn", "OK")
   ),

@@ -19,5 +19,9 @@ if MISSING_PKGS != set():
 msg = "\n".join(msg_list)
 print(msg)
 
-assert REQUIRED_PKGS == AVAILABLE_PKGS, "Not all required packages have been found."
+assert_message = "Not all required packages have been found.\n"
+assert_message += "Missing: "
+assert_message += ", ".join(MISSING_PKGS)
+
+assert REQUIRED_PKGS == AVAILABLE_PKGS, assert_message
 
