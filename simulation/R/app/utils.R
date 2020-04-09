@@ -5,7 +5,6 @@ DARK_BLUE = "#2980b9"
 LIGHT_BLUE = "#56B4E9"
 
 # Auxiliary scripts ------------------------------------------------------------
-
 window_capture_script <- '
 var dimension = [0, 0];
 $(document).on("shiny:connected", function(e) {
@@ -106,14 +105,6 @@ check_packages <- function(packages, load = FALSE, quietly = FALSE) {
 init_packages <- function(packages) {
   sys_info <- Sys.info()
   if (sys_info[["user"]] == "shiny" | sys_info[["effective_user"]] == "shiny") {
-    # library(shiny)
-    # library(shinyBS)
-    # library(shinyWidgets)
-    # library(shinyjs)
-    # library(shinybusy)
-    # library(ggplot2)
-    # library(dplyr)
-    # 
     source("shiny_dependencies.R")
   } else {
     check_packages(packages)
@@ -127,4 +118,10 @@ is_valid_path <- function(path) {
   return(TRUE)
 }
 
-
+choose_directory = function(caption = "Select data directory") {
+  if (exists('choose.dir', 'package:utils')) {
+    choose.dir(caption = caption) 
+  } else {
+    tcltk::tk_choose.dir(caption = caption)
+  }
+}

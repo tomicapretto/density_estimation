@@ -83,7 +83,7 @@ output$plotPanel3 <- renderPlot({
 output$plotPanel3UI <- renderUI({
   plotOutput(
     "plotPanel3",
-    height = "520px",
+    height = input$dimension[2] * 0.70,
     width = "95%"
   )
 })

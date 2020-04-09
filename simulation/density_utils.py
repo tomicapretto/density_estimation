@@ -483,7 +483,10 @@ def estimate_density(
     else:
         grid, pdf = kde_convolution(x, bw, grid_len, grid_min, grid_max, bound_correction)
     
-    return grid, pdf
+    if bw_return:
+        return grid, pdf, bw
+    else:
+        return grid, pdf    
 
 def _get_mixture(grid, mu, var, weight):
     out = np.sum(list((map(lambda m, v, w: _norm_pdf(grid, m, v, w), mu, var, weight))), axis=0)

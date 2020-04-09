@@ -32,7 +32,7 @@ showModal(
 ))
 
 observeEvent(input$python_look_path_btn, {
-  PYTHON_DIR <- shinyDirectoryInput::choose.dir()
+  PYTHON_DIR <- choose_directory()
   updateTextInput(
     session = session, 
     inputId = "python_path",

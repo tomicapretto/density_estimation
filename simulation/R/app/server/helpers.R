@@ -407,7 +407,7 @@ init_python_shiny <- function(input) {
         incProgress(0.2, detail = "Installing packages...")
         reticulate::virtualenv_install(
           envname = "python35_env", 
-          packages = c("numpy", "scipy", "statsmodels"))
+          packages = c("numpy", "scipy"))
         
         incProgress(0.2, detail = "Loading virtual environment...")
         reticulate::use_virtualenv(

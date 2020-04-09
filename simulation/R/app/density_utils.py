@@ -1,5 +1,5 @@
 import numpy as np
-import statsmodels.api as sm
+# import statsmodels.api as sm
 from scipy import stats
 from scipy.signal import gaussian, convolve
 from scipy.fftpack import fft, ifft
@@ -16,9 +16,56 @@ def bw_silverman(x):
     a = min(np.std(x), stats.iqr(x) / 1.34)
     bw = 0.9 * a * len(x) ** (-0.2)
     return bw
-	
-def _get_ise_loocv(h, x, x_min, x_max):
-    
+
+# def _get_ise_loocv(h, x, x_min, x_max):
+#     
+#     """
+#     Computes the Integrated Squared Error (ISE) via Leave-One-Out Cross-Validation.
+#     
+#     Parameters
+#     ----------
+#     x : numpy array
+#         1 dimensional array of sample data from the variable for which a 
+#         density estimate is desired.
+#     h : float
+#         Bandwidth (standard deviation of each Gaussian component)
+#     x_min : float
+#         Lower limit for the domain of the variable
+#     x_max : float
+#         Upper limit for the domain of the variable
+#   
+#     Returns
+#     -------
+#     lscv_error : Float, estimation of the Least Squares Cross-Validation Error.   
+#     """
+#     
+#     x_len = len(x)
+#     
+#     density_x, density_y = estimate_density(x, bw=h)
+#     f_squared = lambda x : _density_evaluate(x, density_x, density_y) ** 2
+#     
+#     # Compute first term of LSCV(h)
+#     f_sq_twice_area =  2 * quad(f_squared, x_min, x_max)[0]
+#     
+#     # Compute second term of LSCV(h)
+#     f_loocv_sum = 0
+#     for i in range(x_len):
+#         aux_x, aux_y = estimate_density(np.delete(x, i), bw=h)
+#         f_loocv_sum = += _density_evaluate(x[i], aux_x, aux_y)
+#     f_loocv_sum *= (2 / x_len)
+# 
+#     # LSCV(h)
+#     lscv_error = np.abs(f_sq_twice_area - f_loocv_sum)
+#     
+#     return lscv_error
+
+def gaussian_pdf(x):
+    return 0.3989422804 * np.exp(-0.5 * x ** 2)
+
+def _density_evaluate(x, x_obs, bw):
+    return (1. / (bw * len(x_obs))) * np.sum(gaussian_pdf((x - x_obs) / bw), axis=0)
+
+def _get_ise_loocv(h, x, x_min, x_max):   
     """
     Computes the Integrated Squared Error (ISE) via Leave-One-Out Cross-Validation.
     
@@ -40,10 +87,9 @@ def _get_ise_loocv(h, x, x_min, x_max):
     """
     
     x_len = len(x)
-    
-    dens = sm.nonparametric.KDEUnivariate(x)
-    dens.fit(kernel='gau', bw=h)
-    f_squared = lambda x : dens.evaluate(x) ** 2
+    h = h[0]
+    density_x, density_y = estimate_density(x, bw=h)
+    f_squared = lambda y : _density_evaluate(y, x, h) ** 2
     
     # Compute first term of LSCV(h)
     f_sq_twice_area =  2 * quad(f_squared, x_min, x_max)[0]
@@ -51,16 +97,16 @@ def _get_ise_loocv(h, x, x_min, x_max):
     # Compute second term of LSCV(h)
     f_loocv_sum = 0
     for i in range(x_len):
-        dens1 = sm.nonparametric.KDEUnivariate(np.delete(x, i))
-        dens1.fit(kernel='gau', bw=h)
-        f_loocv_sum += dens.evaluate(x[i])
+        aux_x, aux_y = estimate_density(np.delete(x, i), bw=h)
+        f_loocv_sum += _density_evaluate(x[i], x, h)
     f_loocv_sum *= (2 / x_len)
 
     # LSCV(h)
     lscv_error = np.abs(f_sq_twice_area - f_loocv_sum)
     
     return lscv_error
-
+    
+    
 def bw_lscv(x):
     """
     Computes Least Squares Cross-Validation bandwidth for a Gaussian KDE
@@ -202,7 +248,6 @@ def _dct1d(x):
     
     w_1k = np.r_[1, (2 * np.exp(-(0 + 1j) * (np.arange(1, x_len)) * np.pi / (2 * x_len)))]
     output = np.real(w_1k * fft(x))
-    
     return output
 
 def _idct1d(x):
@@ -301,7 +346,9 @@ def _select_bw_method(x, method="isj"):
     return bw
 
 def get_bw(x, bw):
-    if isinstance(bw, (int, float)):
+    if isinstance(bw, (int, float, np.ndarray)):
+        if isinstance(bw, np.ndarray):
+          bw = bw[0]
         if bw > 0:
             return bw
         else:
@@ -314,7 +361,7 @@ def get_bw(x, bw):
     else:
         error_string = "Unrecognized `bw` argument.\n"
         # error_string += f"Input {bw} is of type {type(bw)}.\n"
-        # error_string += f"Expected a positive numeric or one of the following strings: {list(_bw_methods.keys())}." 
+        # error_string += f"Expected a positive numeric or one of the following strings: {list(_bw_methods.keys())}."
         raise ValueError(error_string)
 
 def _check_type(x):

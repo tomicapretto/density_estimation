@@ -1,6 +1,7 @@
 source("utils.R")
 packages <- c("shiny", "shinyBS", "shinyWidgets", "shinyjs", 
-              "shinybusy", "ggplot2", "dplyr", "reticulate")
+              "shinybusy", "ggplot2", "dplyr", "reticulate",
+              "stringi")
 
 # Write dependency file to be used by shinyapps.io to detect
 # which packages to use.

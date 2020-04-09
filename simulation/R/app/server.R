@@ -19,7 +19,6 @@ function(input, output, session) {
   store <- reactiveValues()
   store$df_static <- df_static
   store$PYTHON_PATH <- NULL
-  
   sys_info <- Sys.info()
   
   if (sys_info[["user"]] == "shiny" | sys_info[["effective_user"]] == "shiny") {

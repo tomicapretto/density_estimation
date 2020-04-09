@@ -1,6 +1,6 @@
 import pkg_resources
 
-REQUIRED_PKGS = {"numpy", "scipy", "statsmodels"}
+REQUIRED_PKGS = {"numpy", "scipy"}
 
 ALL_PKGS = {REQUIRED_PKGS.key for REQUIRED_PKGS in pkg_resources.working_set}
 MISSING_PKGS = REQUIRED_PKGS - ALL_PKGS
