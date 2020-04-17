@@ -1,0 +1,4 @@
+[BASIC]
+# Try to reduce this list
+good-names= x, a, bw, s, h0, h, b, f, N, l, c1, c2, t, i, j, mu
+disable = bad-continuation, fixme
