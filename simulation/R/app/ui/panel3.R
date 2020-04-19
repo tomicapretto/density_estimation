@@ -3,22 +3,18 @@ tabPanel(
   class = "fade in",
   sidebarLayout(
     sidebarPanel(
-      selectInput(
-        inputId = "contDist", 
-        label = "Select a distribution",
-        choices = c("Normal" = "norm",
-                    "T-Student" = "t",
-                    "Gamma" = "gamma",
-                    "Exponential" = "exp",
-                    "Beta" = "beta",
-                    "Log Normal" = "lnorm",
-                    "Cauchy" = "cauchy",
-                    "Weibull" = "weibull",
-                    "Uniform" = "unif")
+      
+      radioGroupButtons(
+        inputId = "density_dist_type",
+        label = "Distribution type",
+        choices = c("Fixed" = "fixed", "Mixture" = "mixture"), 
+        justified = TRUE
       ),
-      uiOutput("contParamsUI"),
+      
+      uiOutput("density_distribution_ui"),
+      
       numericInput(
-        inputId = "contSampleSize", 
+        inputId = "density_sample_size", 
         label = "Sample size", 
         value = 200, 
         min = 50, 
@@ -27,35 +23,35 @@ tabPanel(
       ),
       hr(),
       selectInput(
-        inputId = "densityEstimator",
+        inputId = "density_estimator",
         label = "Select estimator",
         choices = c("Gaussian KDE" = "gaussian_kde",
                     "Adaptive Gaussian KDE" = "adaptive_kde",
                     "Gaussian mixture via EM" = "mixture_kde")
       ),
-      uiOutput("bwMethodUI"),
+      uiOutput("density_bw_method_ui"),
       checkboxInput(
-        inputId = "extendLimits",
+        inputId = "density_extend_limits",
         label = "Extend variable domain", 
         value = TRUE
       ),
       checkboxInput(
-        inputId = "boundCorrection",
+        inputId = "density_bound_correction",
         label = "Perform boundary correction", 
         value = FALSE
       ),
       actionButton(
-        "button3",
+        "density_plot_btn",
         label = "Go!!"
       ),
       width = 3
     ),
     mainPanel(
       uiOutput(
-        "plotPanel3UI"
+        "density_plot_ui"
       ),
       uiOutput(
-        "downloadPlotPanel3UI"
+        "density_download_plot_ui"
       ),
       width = 9
     )

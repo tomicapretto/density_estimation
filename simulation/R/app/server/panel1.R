@@ -195,7 +195,7 @@ output$downloadPlot <- downloadHandler(
     } else if (input$boxplots_plot_title == "") {
       name <- paste0("plot", count_plot())
     } else {
-      name <- stringr::str_replace_all(input$boxplots_plot_title, " ", "_")
+      name <- gsub(" ", "_", input$boxplots_plot_title)
     }
     paste0(name, '.png')
   },

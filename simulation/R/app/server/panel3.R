@@ -1,13 +1,81 @@
-output$contParamsUI <- renderUI({
+# Fixed and mixture densities specifications -----------------------------------
+update_mixture_ui <- update_mixture_ui_gen()
+
+observeEvent(input$density_dist_type, {
+  if (input$density_dist_type == "mixture") {
+    hide(id = "density_distribution_fixed_ui")
+    show(id = "density_distribution_mix_ui")
+  } else {
+    hide(id = "density_distribution_mix_ui")
+    show(id = "density_distribution_fixed_ui")
+  }
+})
+
+output$density_distribution_ui <- renderUI({
   tagList(
-    distribution_parameters_cont(input$contDist)
+    div(
+      id = "density_distribution_fixed_ui",
+      selectInput(
+        inputId = "density_fixed_distribution", 
+        label = "Select a distribution",
+        choices = c("Normal" = "norm",
+                    "T-Student" = "t",
+                    "Gamma" = "gamma",
+                    "Exponential" = "exp",
+                    "Beta" = "beta",
+                    "Log Normal" = "lnorm",
+                    "Weibull" = "weibull",
+                    "Uniform" = "unif")
+      ),
+      uiOutput("density_fixed_params_ui")
+    ),
+    hidden(
+      div(
+        id = "density_distribution_mix_ui",
+        dropdownButton(
+          inputId = "density_open_settings",
+          label = "Settings",
+          icon = icon("sliders"),
+          status = "primary",
+          circle = FALSE,
+          width = "500px",
+          
+          sliderInput(
+            inputId = "density_mixture_n",
+            label = "Number of components",
+            min = 1, max = 3, value = 1, step = 1 
+          )
+        ),
+        br(),
+        verbatimTextOutput("mix_msg")
+      )
+    )
   )
 })
 
-output$bwMethodUI <- renderUI({
-  if (input$densityEstimator %in% c("gaussian_kde", "adaptive_kde")) {
+output$density_fixed_params_ui <- renderUI({
+  tagList(
+    distribution_parameters_cont(input$density_fixed_distribution)
+  )
+})
+
+observeEvent(input$density_mixture_n, {
+  update_mixture_ui(
+    input = input,
+    output = output,
+    n_new = input$density_mixture_n
+  )
+})
+
+output$mix_msg <- renderText(
+  mixture_message(input)
+)
+
+# Density estimator specifications ---------------------------------------------
+output$density_bw_method_ui <- renderUI({
+  if (input$density_estimator %in% c("gaussian_kde", "adaptive_kde")) {
     selectInput(
-      inputId = "bwMethod",
+      inputId = "density_bw_method",
       label = "Bandwidth method",
       choices = c(
         "Silverman's rule" = "silverman",
@@ -20,24 +88,23 @@ output$bwMethodUI <- renderUI({
     )
   } else {
     selectInput(
-      inputId = "bwMethod",
+      inputId = "density_bw_method",
       label = "Bandwidth method",
       choices = c("Mixture" = "mixture")
     )
   }
 })
 
-observeEvent(input$button3, {
-
-  if (input$contSampleSize <= 100000) {
-    if (input$bwMethod %in% c("lscv", "sj")) {
-      if (input$contSampleSize >= 5000) {
+observeEvent(input$density_plot_btn, {
+  if (input$density_sample_size <= 100000) {
+    if (input$density_bw_method %in% c("lscv", "sj")) {
+      if (input$density_sample_size >= 5000) {
         showNotification(
           ui = HTML(paste(c("Sample size is too large for the chosen method.",
                             "Computation is not performed."), collapse = "<br/>")),
           type = "error"
         )
-      } else if (input$contSampleSize >= 2000) {
+      } else if (input$density_sample_size >= 2000) {
         confirmSweetAlert(
           session = session,
           inputId = "confirm_computation",
@@ -74,21 +141,22 @@ observeEvent(input$button3, {
   }
 })
 
-
-output$plotPanel3 <- renderPlot({
+# Plotting section -------------------------------------------------------------
+output$density_plot <- renderPlot({
   req(store$density_plot)
   store$density_plot()
 })
 
-output$plotPanel3UI <- renderUI({
+output$density_plot_ui <- renderUI({
   plotOutput(
-    "plotPanel3",
+    "density_plot",
     height = input$dimension[2] * 0.70,
     width = "95%"
   )
 })
 
-output$downloadPlotPanel3UI <- renderUI({
+# Download section -------------------------------------------------------------
+output$density_download_plot_ui <- renderUI({
   req(store$density_plot)
   tagList(
     h4("File name"),
@@ -96,7 +164,7 @@ output$downloadPlotPanel3UI <- renderUI({
       column(
         width = 3, 
         textInput(
-          inputId = "filenamePlotPanel3", 
+          inputId = "density_plot_filename", 
           label = NULL, 
           value = NULL,
           placeholder = "Optional"
@@ -104,19 +172,22 @@ output$downloadPlotPanel3UI <- renderUI({
       ),
       column(
         width = 3,
-        downloadButton("downloadPlotPanel3", "Save plot"))
+        downloadButton(
+          outputId = "density_download_plot", 
+          label = "Save plot")
+      )
     )
   )
 })
 
-output$downloadPlotPanel3 <- downloadHandler(
+output$density_download_plot <- downloadHandler(
   filename = function() {
-    if (is.null(input$filenamePlotPanel3)) {
+    if (is.null(input$density_plot_filename)) {
       name <- paste0("plot", count_plot_dens())
-    } else if (input$filenamePlotPanel3 == "") {
+    } else if (input$density_plot_filename == "") {
       name <- paste0("plot", count_plot_dens())
     } else {
-      name <- stringr::str_replace_all(input$filenamePlotPanel3, " ", "_")
+      name <- gsub(" ", "_", input$density_plot_filename)
     }
     paste0(name, '.png')
   },
@@ -124,8 +195,8 @@ output$downloadPlotPanel3 <- downloadHandler(
   content = function(file) {
     png(
       file, 
-      width = 3 * (input$dimension[1] * 0.70), 
-      height = 3 * 520, 
+      width = 3 * input$dimension[1] * 0.70, 
+      height = 3 * input$dimension[2] * 0.70, 
       res = 240)
     store$density_plot()
     dev.off()

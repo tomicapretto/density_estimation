@@ -1,42 +1,40 @@
 updateSelectizeInput(
   session = session, 
-  inputId = "pdfPanel2",
+  inputId = "heatmaps_pdf",
   choices = pdf_choices,
   selected = pdf_choices[[1]],
   options = list(render = I(latex_input_script))
 )
 
-observeEvent(input$getPlotPanel2, {
-  # be careful with this global assignment
-  plot2Path <<- paste0("data/heatmaps/", 
-                       input$metricPanel2, "_",
-                       input$pdfPanel2)
+observeEvent(input$heatmaps_plot_btn, {
+  store$heatmaps_plot_path <- paste0(
+    "data/heatmaps/", input$heatmaps_metric, "_", input$heatmaps_pdf)
   
-  if (input$excludeSJ)  plot2Path <<- paste0(plot2Path, "_no_sj")
-  plot2Path <<- paste0(plot2Path, ".png")
+  if (input$heatmaps_exclude_sj) {
+    store$heatmaps_plot_path <- paste0(store$heatmaps_plot_path, "_no_sj")
+  }
+  store$heatmaps_plot_path <- paste0(store$heatmaps_plot_path, ".png")
   
-  output$plotPanel2 <- renderImage({
+  output$heatmaps_plot <- renderImage({
     return(
       list(
-        src = plot2Path,
+        src = store$heatmaps_plot_path,
         contentType = "image/png",
-        width = input$dimension[1] * 0.74 # Sidebar occupies 25% of width
+        width = input$dimension[1] * 0.74
       )
     )
   }, deleteFile = FALSE)
   
-  output$downloadPlotPanel2UI <- renderUI({
-    downloadButton("downloadPlotPanel2", "Save plot")
+  output$heatmaps_download_plot_ui <- renderUI({
+    downloadButton("heatmaps_download_plot", "Save plot")
   })
-  
 })
 
-output$downloadPlotPanel2 <- downloadHandler(
+output$heatmaps_download_plot <- downloadHandler(
   filename = function() {
-    basename(plot2Path)
+    basename(store$heatmaps_plot_path)
   },
-  
   content = function(file) {
-    file.copy(plot2Path, file)
+    file.copy(store$heatmaps_plot_path, file)
   }
 )
