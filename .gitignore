@@ -1,8 +1,9 @@
-.ipynb_checkpoints
-notebooks/.ipynb_checkpoints
 *.pyc
-src/__pycache__
-misc/
 *.csv
+.ipynb_checkpoints
 .Rproj.user
+.Rprofile
+misc/
+notebooks/.ipynb_checkpoints
+src/__pycache__
 rsconnect/
