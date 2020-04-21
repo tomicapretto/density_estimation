@@ -96,49 +96,56 @@ output$density_bw_method_ui <- renderUI({
 })
 
 observeEvent(input$density_plot_btn, {
-  if (input$density_sample_size <= 100000) {
-    if (input$density_bw_method %in% c("lscv", "sj")) {
-      if (input$density_sample_size >= 5000) {
-        showNotification(
-          ui = HTML(paste(c("Sample size is too large for the chosen method.",
-                            "Computation is not performed."), collapse = "<br/>")),
-          type = "error"
-        )
-      } else if (input$density_sample_size >= 2000) {
-        confirmSweetAlert(
-          session = session,
-          inputId = "confirm_computation",
-          type = "warning",
-          title = "The computation may take a while, confirm?",
-          danger_mode = TRUE
-        )
-        observeEvent(input$confirm_computation, {
-          if (input$confirm_computation) {
-            show_spinner()
-            density_plot_params <- get_density_params(input)
-            store$density_plot <- density_plot_generator(density_plot_params)
-            hide_spinner()
-          }
-        }, ignoreNULL = TRUE)
+  tryCatch({
+    if (input$density_sample_size <= 100000) {
+      if (input$density_bw_method %in% c("lscv", "sj")) {
+        if (input$density_sample_size >= 5000) {
+          showNotification(
+            ui = HTML(paste(c("Sample size is too large for the chosen method.",
+                              "Computation is not performed."), collapse = "<br/>")),
+            type = "error"
+          )
+        } else if (input$density_sample_size >= 2000) {
+          confirmSweetAlert(
+            session = session,
+            inputId = "confirm_computation",
+            type = "warning",
+            title = "The computation may take a while, confirm?",
+            danger_mode = TRUE
+          )
+          observeEvent(input$confirm_computation, {
+            if (input$confirm_computation) {
+              store$density_plot <- get_density_plot(input)
+            }
+          }, ignoreNULL = TRUE)
+        } else {
+          store$density_plot <- get_density_plot(input)
+        }
       } else {
-        show_spinner()
-        density_plot_params <- get_density_params(input)
-        store$density_plot <- density_plot_generator(density_plot_params)
-        hide_spinner()
+        store$density_plot <- get_density_plot(input)
       }
     } else {
-      show_spinner()
-      density_plot_params <- get_density_params(input)
-      store$density_plot <- density_plot_generator(density_plot_params)
-      hide_spinner()
+      showNotification(
+        ui = HTML(paste(c("The maximum sample size is 100,000.",
+                          "Computation is not performed."), collapse = "<br/>")),
+        type = "error"
+      )
     }
-  } else {
-    showNotification(
-      ui = HTML(paste(c("The maximum sample size is 100,000.",
-                        "Computation is not performed."), collapse = "<br/>")),
-      type = "error"
-    )
-  }
+  }, error = function(cnd) {
+    if (inherits(cnd, c("bad-parameters", "missing-component"))) {
+      hide_spinner()
+      showNotification(
+        ui = HTML(gsub("\n", "<br/>", conditionMessage(cnd))),
+        type = "error"
+      )
+    } else {
+      hide_spinner()
+      showNotification(
+        ui = HTML("An unexpected error occurred."),
+        type = "error"
+      )
+    }
+  })
 })
 
 # Plotting section -------------------------------------------------------------

@@ -1,3 +1,5 @@
+source("server/helpers_mixture_modal.R")
+
 # Data wrangling functions -----------------------------------------------------
 df_filter <- function(df, .pdf, .estimator, .bw, .size) {
   df %>%
@@ -107,7 +109,6 @@ custom_facet <- function(..., free_y, nrow = 1) {
   }
 }
 
-# Misc -------------------------------------------------------------------------
 get_bw_choices <- function(x) {
   f <- function (x) switch(x, "mixture" = choices_bw_mixture, choices_bw_classic)
   vec <- unlist(lapply(x, f)) 
@@ -142,9 +143,9 @@ get_label <- function(scale, acc) {
 }
 
 # Continuous variables arguments -----------------------------------------------
-labels_cont <- list(
+cont_dist_labels <- list(
   norm = c("Mean", "Standard Deviation"),
-  t = c("Degrees of freedom", "Non-centrality parameter"),
+  t = c("Degrees of freedom", "NCP"),
   gamma = c("Shape", "Scale"),
   exp = c("Rate"),
   beta = c("Shape 1", "Shape 2"),
@@ -153,7 +154,7 @@ labels_cont <- list(
   unif = c("Lower bound", "Upper bound")
 )
 
-values_cont <- list(
+cont_dist_values <- list(
   norm = 0:1,
   t = 1:0,
   gamma = c(1, 1),
@@ -164,7 +165,7 @@ values_cont <- list(
   unif = c(-1, 1)
 )
 
-mins_cont <- list(
+cont_dist_mins <- list(
   norm = c(-100, 0.1),
   t = 1:0,
   gamma = c(0, 0.1),
@@ -175,7 +176,7 @@ mins_cont <- list(
   unif = c(-100, -100)
 )
 
-maxs_cont <- list(
+cont_dist_maxs <- list(
   norm = c(100, 100),
   t = c(200, 50),
   gamma = c(100, 100),
@@ -184,6 +185,34 @@ maxs_cont <- list(
   lnorm = c(100, 100),
   weibull = c(100, 100),
   unif = c(100, 100)
+)
+
+cont_dist_bounds <- list(
+  "norm" = function(.params) {
+    width <- 3 * .params[[2]]
+    c(.params[[1]] - width, .params[[1]] + width)
+  },
+  "t" = function(.params) {
+    qt(c(0.005, 0.995), .params[[1]], .params[[2]])
+  },
+  "gamma" = function(.params) {
+    c(0, qgamma(0.995, .params[[1]], .params[[2]]))
+  },
+  "exp" = function(.params) {
+    c(0, qexp(0.995, .params[[1]]))
+  },
+  "beta" = function(.params) {
+    c(0, 1)
+  },
+  "lnorm" = function(.params) {
+    c(0, qlnorm(0.995, .params[[1]], .params[[2]]))
+  },
+  "weibull" = function(.params) {
+    c(0, qweibull(0.995, .params[[1]], .params[[2]]))
+  },
+  "unif" = function(.params) {
+    c(.params[[1]], .params[[2]])
+  }
 )
 
 all_equal_length <- function(...) {
@@ -203,17 +232,17 @@ numeric_params <- function(label, value, min = NA, max = NA, step = 0.1, prefix)
 
 distribution_parameters_cont <- function(distribution, prefix = "fixed_params") {
   numeric_params(
-    label = labels_cont[[distribution]],
-    value = values_cont[[distribution]],
-    min = mins_cont[[distribution]],
-    max = maxs_cont[[distribution]],
+    label = cont_dist_labels[[distribution]],
+    value = cont_dist_values[[distribution]],
+    min = cont_dist_mins[[distribution]],
+    max = cont_dist_maxs[[distribution]],
     prefix = prefix
   ) 
 } 
 
 custom_column <- function(id, label, value, min, max, step) {
   column(
-    width = 3,
+    width = 4,
     numericInput(
       inputId = id,
       label = label,
@@ -227,7 +256,6 @@ custom_column <- function(id, label, value, min, max, step) {
 }
 
 generate_mixture_ui <- function(label, value, min = NA, max = NA, step = NA, prefix) {
-  
   if (all(is.na(min))) min <- rep(NA, length(label))
   if (all(is.na(max))) max <- rep(NA, length(label))
   if (all(is.na(step))) step <- rep(NA, length(label))
@@ -244,10 +272,10 @@ render_mixture_ui <- function() {
   renderUI({
     fluidRow(
       generate_mixture_ui(
-        label = labels_cont[[distribution]],
-        value = values_cont[[distribution]],
-        min = mins_cont[[distribution]],
-        max = maxs_cont[[distribution]],
+        label = cont_dist_labels[[distribution]],
+        value = cont_dist_values[[distribution]],
+        min = cont_dist_mins[[distribution]],
+        max = cont_dist_maxs[[distribution]],
         prefix = prefix 
       )
     )
@@ -276,27 +304,8 @@ component_pdf <- function(distribution, .params, x_grid) {
   do.call(.f, .args)
 }
 
-bounds_list <- list(
-  "norm" = function(.params) {
-    width <- 3 * .params[[2]]
-    c(.params[[1]] - width, .params[[1]] + width)
-  },
-  "t" = function(.params) {
-    qt(c(0.005, 0.995), .params[[1]], .params[[2]])
-  },
-  "gamma" = function(.params) {
-    c(0, qgamma(0.998, .params[[1]], .params[[2]]))
-  },
-  "beta" = function(.params) {
-    c(0, 1)
-  },
-  "lnorm" = function(.params) {
-    c(0, qlnorm(0.998, .params[[1]], .params[[2]]))
-  }
-)
-
 pdf_bounds <- function(distribution, .params) {
-  .f <- bounds_list[[distribution]]
+  .f <- cont_dist_bounds[[distribution]]
   .f(.params)
 }
 
@@ -316,22 +325,10 @@ mixture_pdf <- function(distributions, .params, wts = NULL) {
   .l <- list(distributions, .params)
   pdf <- unlist(purrr::pmap(.l, component_pdf, x_grid = x_grid))
   pdf <- as.vector(matrix(pdf, ncol = length(wts)) %*% wts)
-  
+  pdf[is.infinite(pdf)] <- NA # In some edge cases pdf is `Inf`
   return(list("x" = x_grid, "pdf" = pdf))
 }
 
-distributions <- c("norm", "norm")
-params <- list(c(5, 1.4), c(1.2, 1))
-size <- 500
-wts <- c(0.4, 0.6)
-
-rvs <- mixture_rvs(distributions, params, size, wts)
-dens <- mixture_pdf(distributions, params, wts)
-hist(rvs, freq = FALSE, col = "lightblue", breaks = 50)
-lines(dens$x, dens$pdf, lwd = 4)
-
-# ==============================================================================
-# ==============================================================================
 get_mixture_distributions <- function(input, mixture_n) {
   vapply(
     X = paste0("mixture_component", seq_len(mixture_n)),
@@ -350,7 +347,7 @@ get_mixture_params <- function(input, mixture_n) {
       .nms <- names(input)[grepl(x, names(input))]
       # Names are not sorted in `input`. Not very solid, but worked so far
       .nms <- stringr::str_sort(.nms)
-      # Workaround to work with reactive values
+      # Reactive values allow subsetting only one element
       out <- vector("numeric", length(.nms))
       for (i in seq_along(.nms)) {
         out[[i]] <- input[[.nms[[i]]]]
@@ -369,59 +366,102 @@ get_mixture_wts <- function(input, mixture_n) {
   )
 }
 
-get_density_params <- function(input) {
+check_mixture_wts <- function(wts, mixture_n) {
+  if (any(is.na(wts))) {
+    # showNotification(
+    #   ui = HTML(paste(c("At least one NA weight.",
+    #                     "Weighting all components equally."), collapse = "<br/>")),
+    #   type = "warning"
+    # )
+    wts <- round(rep(1 / mixture_n, mixture_n), 3)
+  } else if (!((sum(wts) > 1 - 0.0011) && (sum(wts) < 1 + 0.0011))) {
+    showNotification(
+      ui = HTML(paste(c("Sum of weights is not equal to 1.",
+                        "Weighting all components equally."), collapse = "<br/>")),
+      type = "warning"
+    )
+    wts <- round(rep(1 / mixture_n, mixture_n), 3)
+  }
+  wts
+}
+
+stop_custom <- function(.subclass, message, call = NULL, ...) {
+  .error <- structure(
+    list(
+      message = message,
+      call = call,
+      ...
+    ),
+    class = c(.subclass, "error", "condition")
+  )
+  stop(.error)
+}
+
+check_density_args_inner <- function(.params, mins, maxs) {
+  vapply(
+    X = seq_along(.params), 
+    FUN = function(i) .params[[i]] >= mins[[i]] & .params[[i]] <= maxs[[i]],
+    FUN.VALUE = logical(1),
+    USE.NAMES = FALSE
+  )
+}
+
+check_density_args <- function(distributions, .params) {
+  mins <- purrr::map(distributions, .f = function(x) cont_dist_mins[[x]])
+  maxs <- purrr::map(distributions, .f = function(x) cont_dist_maxs[[x]])
   
+  lgls <- unlist(purrr::pmap(list(.params, mins, maxs), check_density_args_inner))
+  
+  if (any(!lgls)) {
+    stop_custom(
+      .subclass = "bad-parameters", 
+      message = paste("At least one parameter value is not supported.",
+                      "Possible causes:",
+                      "* Very low/high values.",
+                      "* Value not in domain of parameter (i.e. negative SD).",sep = "\n")
+      )
+  }
+  return(invisible(NULL))
+}
+
+get_density_params <- function(input) {
   if (input$density_dist_type == "mixture") {
-    mixture_n <- input$density_mixture_n
     
+    if (is.null(input[["mixture_component1_input2"]])) {
+      stop_custom(
+        .subclass = "missing-component",
+        message = "Specify at least one component for the mixture"
+      )
+    }
+    
+    mixture_n <- input$density_mixture_n
     distributions <- get_mixture_distributions(input, mixture_n)
     .params <- get_mixture_params(input, mixture_n)
-    wts <- get_mixture_wts(input, mixture_n)
     
-    if (any(is.na(wts))) {
-      wts <- round(rep(1 / mixture_n, mixture_n), 2)
-    } else if (sum(wts) != 1) {
-      wts <- round(rep(1 / mixture_n, mixture_n), 2)
-    }
-
+    check_density_args(distributions, .params)
+  
+    wts <- get_mixture_wts(input, mixture_n)
+    wts <- check_mixture_wts(wts, mixture_n)
     rvs <- mixture_rvs(distributions, .params, input$density_sample_size, wts)
     pdf <- mixture_pdf(distributions, .params, wts)
     
-    x_true <- pdf$x
-    y_true <- pdf$pdf
-    x_range <- range(x_true)
-    y_range <- c(0, 1.15 * max(y_true))
-
   } else {
-    dist_params <- switch(
-      input$density_fixed_distribution,
-      "norm"  = list(input$fixed_params_input1, input$fixed_params_input2),
-      "t"     = list(input$fixed_params_input1, input$fixed_params_input2),
-      "gamma" = list(input$fixed_params_input1, input$fixed_params_input2),
-      "exp"   = list(input$fixed_params_input1),
-      "beta"  = list(input$fixed_params_input1, input$fixed_params_input2),
-      "lnorm" = list(input$fixed_params_input1, input$fixed_params_input2),
-      "weibull" = list(input$fixed_params_input1, input$fixed_params_input2),
-      "unif"  = list(input$fixed_params_input1, input$fixed_params_input2)
-    )
+    distribution <- input$density_fixed_distribution
+    dist_params <- if (distribution == "exp") {
+      list(input$fixed_params_input1)
+    } else {
+      list(input$fixed_params_input1, input$fixed_params_input2)
+    }
     
-    # Generate random values
-    what <- paste0("r", input$density_fixed_distribution)
-    rvs <- do.call(what, c(list(input$density_sample_size), dist_params))
-    
-    # Generate domain based on quantiles
-    what <- paste0("q", input$density_fixed_distribution)
-    percentiles <- c(0.008, 0.992)
-    dist_range <- do.call(what, c(list(percentiles), dist_params))
-    
-    # Generate true dsitribution
-    dist_density <- paste0("d", input$density_fixed_distribution)
-    x_true = seq(dist_range[1], dist_range[2], length.out = 250)
-    y_true = do.call(dist_density, c(list(x_true), dist_params))
-    
-    x_range = c(dist_range[1], dist_range[2])
-    y_range = c(0, 1.18 * max(y_true))
+    check_density_args(distribution, list(dist_params))
+    rvs <- mixture_rvs(distribution, list(dist_params), input$density_sample_size, wts = 1)
+    pdf <- mixture_pdf(distribution, list(dist_params), wts = 1)
   }
+  
+  x_true <- pdf$x
+  y_true <- pdf$pdf
+  x_range <- range(x_true)
+  y_range <- c(0, 1.16 * max(y_true, na.rm = TRUE))
   
   if (input$density_estimator == "gaussian_kde") {
     estimation <- estimate_density(
@@ -483,6 +523,14 @@ density_plot_generator <- function(params) {
            col = c("black", DARK_RED), lwd = 5, inset = 0.015)
   }
   return(f)
+}
+
+get_density_plot <- function(input) {
+  show_spinner()
+  density_plot_params <- get_density_params(input)
+  density_plot <- density_plot_generator(density_plot_params)
+  hide_spinner()
+  return(density_plot)
 }
 
 # Initialize python ------------------------------------------------------------
@@ -604,4 +652,3 @@ restart_r <- function() if (tolower(.Platform$GUI) == "rstudio") {
   # .rs.restartR()
 }
 
-source("server/helpers_mixture_modal.R")

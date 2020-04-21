@@ -7,7 +7,7 @@ library(shadowtext)
 options(scipen=999)
 
 # Read data --------------------------------------------------------------------
-output_files <- paste0("../output/", list.files("../output"))
+output_files <- paste0("../simulation/output/", list.files("../simulation/output/"))
 data_all <- bind_rows(lapply(output_files, read_csv))
 
 # Mutate data ------------------------------------------------------------------
@@ -171,7 +171,7 @@ time_heatmaps <- get_time_heatmaps(data_summary_time, exclude_sj = FALSE)
 error_heatmaps_no_sj <- get_error_heatmaps(data_summary_error)
 error_heatmaps <- get_error_heatmaps(data_summary_error, exclude_sj = FALSE)
 
-filenames <- paste0("heatmaps/", paste0("time_", names(time_heatmaps)), ".png")
+filenames <- paste0("app/data/heatmaps/", paste0("time_", names(time_heatmaps)), ".png")
 purrr::pwalk(
   list(filenames, time_heatmaps),
   ggsave,
@@ -181,7 +181,7 @@ purrr::pwalk(
   units = "cm"
 )
 
-filenames <- paste0("heatmaps/", paste0("time_", names(time_heatmaps_no_sj)), "_no_sj.png")
+filenames <- paste0("app/data/heatmaps/", paste0("time_", names(time_heatmaps_no_sj)), "_no_sj.png")
 purrr::pwalk(
   list(filenames, time_heatmaps_no_sj),
   ggsave,
@@ -191,7 +191,7 @@ purrr::pwalk(
   units = "cm"
 )
 
-filenames <- paste0("heatmaps/", paste0("error_", names(error_heatmaps)), ".png")
+filenames <- paste0("app/data/heatmaps/", paste0("error_", names(error_heatmaps)), ".png")
 purrr::pwalk(
   list(filenames, error_heatmaps),
   ggsave,
@@ -201,7 +201,7 @@ purrr::pwalk(
   units = "cm"
 )
 
-filenames <- paste0("heatmaps/", paste0("error_", names(error_heatmaps_no_sj)), "_no_sj.png")
+filenames <- paste0("app/data/heatmaps/", paste0("error_", names(error_heatmaps_no_sj)), "_no_sj.png")
 purrr::pwalk(
   list(filenames, error_heatmaps_no_sj),
   ggsave,
@@ -212,7 +212,7 @@ purrr::pwalk(
 )
 
 # Copy files to app directory
-current_folder <- "heatmaps"
-new_folder <- "app/data/heatmaps"
-files_to_copy <- list.files(current_folder)
-file.copy(file.path(current_folder, files_to_copy), new_folder, overwrite = TRUE)
+# current_folder <- "heatmaps"
+# new_folder <- "app/data/heatmaps"
+# files_to_copy <- list.files(current_folder)
+# file.copy(file.path(current_folder, files_to_copy), new_folder, overwrite = TRUE)
