@@ -84,9 +84,18 @@ observeEvent(input$boxplots_plot_btn, {
 
 # Add title to plot
 observeEvent(input$boxplots_plot_title_btn, {
-  
+  # or nchar(ttl) == 0
+  if (trimws(input$boxplots_plot_title) == "") {
+    ttl <- NULL
+  } else {
+    ttl <- input$boxplots_plot_title
+  }
+
   store$boxplots_plot <- store$boxplots_plot +
-    ggtitle(input$boxplots_plot_title) +
+    labs(
+      title = ttl
+    ) +
+    # ggtitle(input$boxplots_plot_title) +
     theme(plot.title = element_text(
       size = input$boxplot_plot_title_size,
       hjust = input$boxplot_plot_title_pos))
@@ -127,7 +136,6 @@ observeEvent(input$boxplots_plot_btn, {
   })
 }, once = TRUE)
 
-
 # Output plot according to size setings
 observeEvent(input$boxplots_plot_btn, {
   output$boxplots_plot_UI <- renderUI({
@@ -153,16 +161,29 @@ observeEvent(input$boxplots_plot_btn, {
   output$boxplots_plot_title_settings_ui <- renderUI({
     fluidRow(
       column(
-        4,
-        textInput("boxplots_plot_title", "Title")),
+        width = 4,
+        textInput(
+          inputId = "boxplots_plot_title", 
+          label = "Title"
+        )
+      ),
       column(
-        4,
-        numericInput("boxplot_plot_title_size", "Title size", value = 14, min = 2)),
+        width = 4,
+        numericInput(
+          inputId = "boxplot_plot_title_size", 
+          label = "Title size", 
+          value = 14, 
+          min = 2
+        )
+      ),
       column(
-        4,
-        selectInput("boxplot_plot_title_pos", "Title position", 
-                    choices = c("Left" = 0, "Center" = 0.5, "Right" = 1),
-                    selected = 0)
+        width = 4,
+        selectInput(
+          inputId = "boxplot_plot_title_pos", 
+          label = "Title position", 
+          choices = c("Left" = 0, "Center" = 0.5, "Right" = 1),
+          selected = 0
+        )
       )
     )
   })
@@ -203,7 +224,7 @@ output$downloadPlot <- downloadHandler(
   content = function(file) {
     png(
       filename = file, 
-      width = as.numeric(input$boxplots_plot_width / 100) * (input$dimension[1] * 0.74),
+      width = as.numeric(input$boxplots_plot_width / 100) * (input$dimension[1] * 0.72),
       height = input$boxplots_plot_height, 
       res = 120)
     print(store$boxplots_plot)

@@ -1,16 +1,6 @@
 source("utils.R")
-packages <- c("shiny", "shinyBS", "shinyWidgets", "shinyjs", 
-              "shinybusy", "ggplot2", "dplyr", "reticulate", 
-              "stringr", "stringi", "purrr")
-
-# Write dependency file to be used by shinyapps.io to detect
-# which packages to use.
-pkgs <- setdiff(packages, "reticulate")
-file_connection <- file("shiny_dependencies.R")
-writeLines(paste0("library(", packages, ")"), file_connection)
-close(file_connection)
-
-init_packages(packages)
+source("write_shiny_dependencies.R")
+init_packages(PACKAGES_REQ, PACKAGES_LOAD)
 
 tagList(
   # Capture window size, used to save plots.

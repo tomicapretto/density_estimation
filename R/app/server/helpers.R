@@ -1,5 +1,124 @@
 source("server/helpers_mixture_modal.R")
 
+# Initialize python ------------------------------------------------------------
+use_python_custom = function(path) {
+  tryCatch({
+    reticulate::use_python(
+      python = path
+    )
+    suppressWarnings(invisible(reticulate::py_config()))
+    path_found = dirname(reticulate:::.globals$py_config$python)
+    if (path != path_found) {
+      showNotification(
+        paste(
+          stringi::stri_wrap(
+            paste(
+              "Python was found in", path_found, "which differs from your input."
+            ), 
+            width = 30),
+          collapse = "\n"
+        ),
+        type = "warning", 
+        duration = 7
+      )
+    }
+    showNotification(
+      paste("Python version:", reticulate:::.globals$py_config$version),
+      type = "message",
+      duration = 7
+    )
+    return(path_found)
+  }, 
+  error = function(c) {
+    showNotification(
+      paste("The following error was thrown when trying to load Python<\br>", 
+            c),
+      type = "error",
+      duration = 7
+    )
+  })
+}
+
+init_python_custom <- function(input) {
+  withProgress(
+    message = "Getting Python ready", 
+    expr = {
+      incProgress(0, detail = "Configuring Python...")
+      PYTHON_PATH <- use_python_custom(input$python_path)
+      incProgress(0.33, detail = "Checking packages...")
+      
+      tryCatch({
+        msg <- reticulate::py_capture_output(
+          reticulate::source_python("python/check_pkgs.py"))
+        showNotification(
+          HTML(gsub("\n","<br/>", msg)),
+          type = "message",
+          duration = 7)
+      },
+      error = function(c) {
+        showNotification(
+          HTML(paste("Not all required packages have been found<br/>", c)),
+          type = "error",
+          duration = 7
+        )
+        return(invisible(NULL))
+      })
+      incProgress(0.33, detail = "Loading functions...")
+      reticulate::source_python("python/density_utils.py", envir = globalenv())
+      incProgress(0.34, detail = "Done!")
+    }
+  )
+  return(invisible(PYTHON_PATH))
+}
+
+init_python_shiny <- function(input) {
+  tryCatch({
+    withProgress(
+      message = "Getting Python ready", 
+      expr = {
+        
+        incProgress(0, detail = "Creating virtual environment...")
+        reticulate::virtualenv_create(
+          envname = "python35_env", 
+          python = "/usr/bin/python3")
+        
+        incProgress(0.2, detail = "Installing packages...")
+        reticulate::virtualenv_install(
+          envname = "python35_env", 
+          packages = c("numpy", "scipy"))
+        
+        incProgress(0.2, detail = "Loading virtual environment...")
+        reticulate::use_virtualenv(
+          virtualenv = "python35_env", 
+          required = TRUE)
+        
+        incProgress(0.2, detail = "Loading functions...")
+        reticulate::source_python(
+          file = "python/density_utils.py", 
+          envir = globalenv())
+        incProgress(0.2, detail = "Done!")
+      }
+    )
+    return(TRUE)
+  },
+  error = function(c){
+    showNotification(
+      HTML(paste(
+        stringi::stri_wrap(paste("Python could not be loaded.<br/>Error:", c), 
+                           width = 30), collapse = "<br/>")),
+      type = "error", 
+      duration = 7
+    )
+    return(FALSE)
+  })
+}
+
+# Restart session --------------------------------------------------------------
+restart_r <- function() if (tolower(.Platform$GUI) == "rstudio") {
+  # rm(list = ls())
+  # .rs.restartR()
+}
+
 # Data wrangling functions -----------------------------------------------------
 df_filter <- function(df, .pdf, .estimator, .bw, .size) {
   df %>%
@@ -166,13 +285,24 @@ cont_dist_values <- list(
 )
 
 cont_dist_mins <- list(
-  norm = c(-100, 0.1),
+  norm = c(-100, 0),
   t = 1:0,
-  gamma = c(0, 0.1),
-  exp = 0.1,
-  beta = c(0.1, 0.1),
-  lnorm = c(0.1, 0.1),
-  weibull = c(0.1, 0.1),
+  gamma = c(0, 0),
+  exp = 0,
+  beta = c(0, 0),
+  lnorm = c(0, 0),
+  weibull = c(0, 0),
+  unif = c(-100, -100)
+)
+
+cont_dist_mins_check <- list(
+  norm = c(-100, 0.001),
+  t = 1:0,
+  gamma = c(0, 0.001),
+  exp = 0.001,
+  beta = c(0.01, 0.01),
+  lnorm = c(0.01, 0.01),
+  weibull = c(0.01, 0.01),
   unif = c(-100, -100)
 )
 
@@ -219,7 +349,7 @@ all_equal_length <- function(...) {
   length(unique(vapply(list(...), length, 1L))) == 1
 }
 
-numeric_params <- function(label, value, min = NA, max = NA, step = 0.1, prefix) {
+numeric_params <- function(label, value, min = NA, max = NA, step = 0.5, prefix) {
   if (all(is.na(min))) min <- rep(NA, length(label))
   if (all(is.na(max))) max <- rep(NA, length(label))
   step <- rep(step, length(label))
@@ -366,24 +496,30 @@ get_mixture_wts <- function(input, mixture_n) {
   )
 }
 
-check_mixture_wts <- function(wts, mixture_n) {
-  if (any(is.na(wts))) {
-    # showNotification(
-    #   ui = HTML(paste(c("At least one NA weight.",
-    #                     "Weighting all components equally."), collapse = "<br/>")),
-    #   type = "warning"
-    # )
-    wts <- round(rep(1 / mixture_n, mixture_n), 3)
-  } else if (!((sum(wts) > 1 - 0.0011) && (sum(wts) < 1 + 0.0011))) {
-    showNotification(
-      ui = HTML(paste(c("Sum of weights is not equal to 1.",
-                        "Weighting all components equally."), collapse = "<br/>")),
-      type = "warning"
-    )
-    wts <- round(rep(1 / mixture_n, mixture_n), 3)
+check_mixture_wts_gen <- function() {
+  wts_previous <- 1
+  f <- function(wts, mixture_n) {
+    if (any(is.na(wts))) {
+      wts <- round(rep(1 / mixture_n, mixture_n), 3)
+    } else if (!((sum(wts) > 1 - 0.0011) && (sum(wts) < 1 + 0.0011))) {
+      changed <- length(wts) != length(wts_previous) | !all(wts == wts_previous)
+      if (changed) {
+        showNotification(
+          ui = HTML(paste(c("Sum of weights is not equal to 1.",
+                            "Weighting all components equally."), 
+                          collapse = "<br/>")),
+          type = "warning"
+        )
+        wts_previous <<- wts
+      }
+      wts <- round(rep(1 / mixture_n, mixture_n), 3)
+    }
+    wts
   }
-  wts
+  return(f)
 }
+
+check_mixture_wts <- check_mixture_wts_gen()
 
 stop_custom <- function(.subclass, message, call = NULL, ...) {
   .error <- structure(
@@ -407,7 +543,7 @@ check_density_args_inner <- function(.params, mins, maxs) {
 }
 
 check_density_args <- function(distributions, .params) {
-  mins <- purrr::map(distributions, .f = function(x) cont_dist_mins[[x]])
+  mins <- purrr::map(distributions, .f = function(x) cont_dist_mins_check[[x]])
   maxs <- purrr::map(distributions, .f = function(x) cont_dist_maxs[[x]])
   
   lgls <- unlist(purrr::pmap(list(.params, mins, maxs), check_density_args_inner))
@@ -415,10 +551,12 @@ check_density_args <- function(distributions, .params) {
   if (any(!lgls)) {
     stop_custom(
       .subclass = "bad-parameters", 
-      message = paste("At least one parameter value is not supported.",
-                      "Possible causes:",
-                      "* Very low/high values.",
-                      "* Value not in domain of parameter (i.e. negative SD).",sep = "\n")
+      message = paste(
+        "At least one parameter value is not supported.",
+        "Possible causes:",
+        "* Very low/high values.",
+        "* Value not in domain of parameter (i.e. negative SD).", 
+        sep = "\n")
       )
   }
   return(invisible(NULL))
@@ -531,124 +669,5 @@ get_density_plot <- function(input) {
   density_plot <- density_plot_generator(density_plot_params)
   hide_spinner()
   return(density_plot)
-}
-
-# Initialize python ------------------------------------------------------------
-use_python_custom = function(path) {
-  tryCatch({
-    reticulate::use_python(
-      python = path
-    )
-    suppressWarnings(invisible(reticulate::py_config()))
-    path_found = dirname(reticulate:::.globals$py_config$python)
-    if (path != path_found) {
-      showNotification(
-        paste(
-          stringi::stri_wrap(
-            paste(
-              "Python was found in", path_found, "which differs from your input."
-            ), 
-            width = 30),
-          collapse = "\n"
-        ),
-        type = "warning", 
-        duration = 7
-      )
-    }
-    showNotification(
-      paste("Python version:", reticulate:::.globals$py_config$version),
-      type = "message",
-      duration = 7
-    )
-    return(path_found)
-  }, 
-  error = function(c) {
-    showNotification(
-      paste("The following error was thrown when trying to load Python<\br>", 
-            c),
-      type = "error",
-      duration = 7
-    )
-  })
-}
-
-init_python_custom <- function(input) {
-  withProgress(
-    message = "Getting Python ready", 
-    expr = {
-      incProgress(0, detail = "Configuring Python...")
-      PYTHON_PATH <- use_python_custom(input$python_path)
-      incProgress(0.33, detail = "Checking packages...")
-  
-      tryCatch({
-        msg <- reticulate::py_capture_output(
-          reticulate::source_python("python/check_pkgs.py"))
-        showNotification(
-          HTML(gsub("\n","<br/>", msg)),
-          type = "message",
-          duration = 7)
-      },
-      error = function(c) {
-        showNotification(
-          HTML(paste("Not all required packages have been found<br/>", c)),
-          type = "error",
-          duration = 7
-        )
-        return(invisible(NULL))
-      })
-      incProgress(0.33, detail = "Loading functions...")
-      reticulate::source_python("python/density_utils.py", envir = globalenv())
-      incProgress(0.34, detail = "Done!")
-    }
-  )
-  return(invisible(PYTHON_PATH))
-}
-
-init_python_shiny <- function(input) {
-  tryCatch({
-    withProgress(
-      message = "Getting Python ready", 
-      expr = {
-        
-        incProgress(0, detail = "Creating virtual environment...")
-        reticulate::virtualenv_create(
-          envname = "python35_env", 
-          python = "/usr/bin/python3")
-        
-        incProgress(0.2, detail = "Installing packages...")
-        reticulate::virtualenv_install(
-          envname = "python35_env", 
-          packages = c("numpy", "scipy"))
-        
-        incProgress(0.2, detail = "Loading virtual environment...")
-        reticulate::use_virtualenv(
-          virtualenv = "python35_env", 
-          required = TRUE)
-        
-        incProgress(0.2, detail = "Loading functions...")
-        reticulate::source_python(
-          file = "python/density_utils.py", 
-          envir = globalenv())
-        incProgress(0.2, detail = "Done!")
-      }
-    )
-    return(TRUE)
-  },
-  error = function(c){
-    showNotification(
-      HTML(paste(
-        stringi::stri_wrap(paste("Python could not be loaded.<br/>Error:", c), 
-                           width = 30), collapse = "<br/>")),
-      type = "error", 
-      duration = 7
-    )
-    return(FALSE)
-  })
-}
-
-# Restart session --------------------------------------------------------------
-restart_r <- function() if (tolower(.Platform$GUI) == "rstudio") {
-  # rm(list = ls())
-  # .rs.restartR()
 }
 

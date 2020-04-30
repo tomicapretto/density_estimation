@@ -95,6 +95,14 @@ output$density_bw_method_ui <- renderUI({
   }
 })
 
+observeEvent(input$density_estimator, {
+  if (input$density_estimator %in% c("gaussian_kde", "adaptive_kde")) {
+    enable("density_bound_correction")
+  } else {
+    disable("density_bound_correction")
+  }
+})
+
 observeEvent(input$density_plot_btn, {
   tryCatch({
     if (input$density_sample_size <= 100000) {
