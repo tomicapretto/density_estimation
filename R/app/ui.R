@@ -31,7 +31,8 @@ tagList(
         id = "tabs",
         source("ui/panel1.R", local = TRUE)$value,
         source("ui/panel2.R", local = TRUE)$value,
-        source("ui/panel3.R", local = TRUE)$value
+        source("ui/panel3.R", local = TRUE)$value,
+        source("ui/panel4.R", local = TRUE)$value
       )
     )
   )
