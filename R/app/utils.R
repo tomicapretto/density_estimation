@@ -71,6 +71,23 @@ pdfCodes <- c(
 
 pdf_choices <- setNames(pdfNames, pdfCodes)
 
+pdfFacetLbls <- c(
+  "N(0, 1)",
+  "N(0, 2)",
+  "0.5*N(-12, 0.5) + 0.5*N(12, 0.5)",
+  "0.5*N(0, 0.1) + 0.5*N(5, 1)",
+  "0.67*N(0, 1) + 0.33*N(0, 0.1)",
+  "0.75*N(0, 1) + 0.25*N(1.5, 0.33)",
+  "0.6*N(3.5, 0.5) + 0.4*N(9, 1.5)",
+  "Ga(1, 1)",
+  "Ga(2, 1)",
+  "Be(2.5, 1.5)",
+  "LogN(0, 1)"
+)
+
+pdf_facet_lbls <- setNames(pdfFacetLbls, pdfNames)
+
+
 # Panel grid labels
 bw_lbls <- c(
   "silverman" = "Silverman's rule",

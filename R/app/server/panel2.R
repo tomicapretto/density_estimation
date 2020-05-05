@@ -7,27 +7,35 @@ updateSelectizeInput(
 )
 
 observeEvent(input$heatmaps_plot_btn, {
-  store$heatmaps_plot_path <- paste0(
-    "data/heatmaps/", input$heatmaps_metric, "_", input$heatmaps_pdf)
   
-  if (input$heatmaps_exclude_sj) {
-    store$heatmaps_plot_path <- paste0(store$heatmaps_plot_path, "_no_sj")
-  }
-  store$heatmaps_plot_path <- paste0(store$heatmaps_plot_path, ".png")
-  
-  output$heatmaps_plot <- renderImage({
-    return(
-      list(
-        src = store$heatmaps_plot_path,
-        contentType = "image/png",
-        width = input$dimension[1] * 0.74
-      )
+  if (input$heatmaps_pdf == "") {
+    showNotification(
+      paste("Density argument is empty"),
+      type = "error"
     )
-  }, deleteFile = FALSE)
-  
-  output$heatmaps_download_plot_ui <- renderUI({
-    downloadButton("heatmaps_download_plot", "Save plot")
-  })
+  } else {
+    store$heatmaps_plot_path <- paste0(
+      "data/heatmaps/", input$heatmaps_metric, "_", input$heatmaps_pdf)
+    
+    if (input$heatmaps_exclude_sj) {
+      store$heatmaps_plot_path <- paste0(store$heatmaps_plot_path, "_no_sj")
+    }
+    store$heatmaps_plot_path <- paste0(store$heatmaps_plot_path, ".png")
+    
+    output$heatmaps_plot <- renderImage({
+      return(
+        list(
+          src = store$heatmaps_plot_path,
+          contentType = "image/png",
+          width = input$dimension[1] * 0.74
+        )
+      )
+    }, deleteFile = FALSE)
+    
+    output$heatmaps_download_plot_ui <- renderUI({
+      downloadButton("heatmaps_download_plot", "Save plot")
+    })
+  }
 })
 
 output$heatmaps_download_plot <- downloadHandler(

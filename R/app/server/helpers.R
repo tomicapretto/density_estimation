@@ -130,6 +130,31 @@ df_filter <- function(df, .pdf, .estimator, .bw, .size) {
     )
 }
 
+
+df_facet_order <- function(df, input) {
+  cols <- input[["boxplots_facet_vars"]]
+  if (!any(cols %in% c("bw", "estimator", "pdf"))) return(df)
+  cols_match <- c(
+    "bw" = "boxplots_bw", 
+    "estimator" = "boxplots_estimator", 
+    "pdf" = "boxplots_pdf")
+  
+  for (col in cols) {
+    lvls <- input[[cols_match[[col]]]]
+    if (col == "pdf") {
+      lbls <- unname(pdf_facet_lbls[lvls])
+    } else {
+      lbls <- lvls
+    }
+    
+    df[[col]] <- factor(
+      x = df[[col]], 
+      levels = lvls, 
+      labels = lbls)
+  }
+  return(df)
+}
+
 df_trim <- function(df, .group_vars, .trim_var, .quantile) {
   
   .group_vars <- purrr::map(.group_vars, as.name)
@@ -158,13 +183,18 @@ deduce_scale <- function(x) {
 precision <- scales:::precision
 
 # Plotting functions -----------------------------------------------------------
+check_boxplot_args <- function(args) {
+  # First sapply checks NULL as well
+  any(sapply(args, function (x) length(x) == 0)) | anyNA(args)
+}
+
 initialize_plot <- function(df, .metric) {
   .metric <- as.name(.metric)
   ggplot(
     df,
     aes(
         x = factor(size),
-        y = !! .metric, 
+        y = !!.metric, 
         fill = factor(size)
     )
   )

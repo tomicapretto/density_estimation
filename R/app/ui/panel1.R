@@ -38,8 +38,8 @@ tabPanel(
       checkboxGroupButtons(
         inputId = "boxplots_size",
         label = "Sample size(s)",
-        choices = choices_size_default,
-        selected = choices_size_default,
+        choices = as.character(choices_size_default),
+        selected = as.character(choices_size_default),
         justified = TRUE,
         size = "sm"
       ),

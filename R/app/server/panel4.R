@@ -49,11 +49,12 @@ observeEvent(boxplots_example1_d1(), {
     inputId = "boxplots_trim_pct",
     value = 5
   )
-  updateCheckboxGroupButtons(
-    session = session,
-    inputId = "boxplots_size",
-    selected = c(200, 500, 1000, 5000, 10000)
-  )
+  # Not necessary, triggered when you update `boxplots_bw`
+  # updateCheckboxGroupButtons( 
+  #   session = session,
+  #   inputId = "boxplots_size",
+  #   selected = as.character(choices_size_default)
+  # )
 })
 
 observeEvent(boxplots_example1_d2(), {
@@ -72,7 +73,8 @@ observeEvent(boxplots_example1_d3(), {
 boxplots_example2_rctv <- reactive(input$boxplots_example_2)
 boxplots_example2_d1 <- debounce(boxplots_example2_rctv, 100)
 boxplots_example2_d2 <- debounce(boxplots_example2_rctv, 300)
-boxplots_example2_d3 <- debounce(boxplots_example2_rctv, 500)
+boxplots_example2_d3 <- debounce(boxplots_example2_rctv, 450)
+boxplots_example2_d4 <- debounce(boxplots_example2_rctv, 550)
 
 observeEvent(input$boxplots_example_2, {
   updateTabsetPanel(
@@ -118,11 +120,6 @@ observeEvent(boxplots_example2_d1(), {
     inputId = "boxplots_trim_pct",
     value = 5
   )
-  updateCheckboxGroupButtons(
-    session = session,
-    inputId = "boxplots_size",
-    selected = c(500, 1000, 5000, 10000)
-  )
 })
 
 observeEvent(boxplots_example2_d2(), {
@@ -134,6 +131,14 @@ observeEvent(boxplots_example2_d2(), {
 })
 
 observeEvent(boxplots_example2_d3(), {
+  updateCheckboxGroupButtons(
+    session = session,
+    inputId = "boxplots_size",
+    selected = as.character(choices_size_default[-1])
+  )
+})
+
+observeEvent(boxplots_example2_d4(), {
   click("boxplots_plot_btn")
 })
 

@@ -19,8 +19,7 @@ observeEvent(input$boxplots_estimator, {
 
 # Update `size` input according to `boxplots_bw`.
 observeEvent(input$boxplots_bw, {
-  
-  choices <- as.numeric(get_size_choices(input$boxplots_bw))
+  choices <- as.character(get_size_choices(input$boxplots_bw))
   updateCheckboxGroupButtons(
     session = session,
     inputId = "boxplots_size",
@@ -32,54 +31,66 @@ observeEvent(input$boxplots_bw, {
 
 # Produce plot
 observeEvent(input$boxplots_plot_btn, {
-  
-  # Plot data and settings
-  # Filter
   args <- list(store$df_static, input$boxplots_pdf, 
-               input$boxplots_estimator, input$boxplots_bw, as.numeric(input$boxplots_size))
-  store$df_filtered <- do.call(df_filter, args)
+               input$boxplots_estimator, input$boxplots_bw, 
+               as.numeric(input$boxplots_size))
   
-  # Trim
-  group_vars <- c("estimator", "bw", "size")
-  quantile <- (100 - input$boxplots_trim_pct) / 100
-  args <- list(store$df_filtered, group_vars, isolate(input$boxplots_metric), quantile)
-  store$df_trimmed <- do.call(df_trim, args)
-  
-  # Deduce scale
-  scale <- if (input$boxplots_metric == "time") {
-    deduce_scale(store$df_trimmed[[isolate(input$boxplots_metric)]])
+  if (check_boxplot_args(args)) {
+    # Check arguments are not empty
+    showNotification(
+      paste("At least one required argument is empty"),
+      type = "error"
+    )
   } else {
-    ""
-  }
-  
-  # Get accuracy
-  # TODO: Improve this pls! Not always working nice.y
-  if (scale == "ms") {
-    acc_var <- store$df_trimmed[[input$boxplots_metric]] * 100
-  } else if (scale == "sec") {
-    acc_var <- store$df_trimmed[[input$boxplots_metric]]
-  } else {
-    acc_var <- store$df_trimmed[[input$boxplots_metric]] / 10
-  }
-  
-  acc <- precision(acc_var)
-  
-  # Plot it!
-  store$boxplots_plot <- initialize_plot(
-    store$df_trimmed, 
-    isolate(input$boxplots_metric)
+    # Plot data and settings
+    # Filter
+    store$df_filtered <- do.call(df_filter, args)
+    
+    # Convert facetting variables to factors with order resembling the one in the input
+    store$df_filtered <- df_facet_order(store$df_filtered, input)
+    
+    # Trim
+    group_vars <- c("estimator", "bw", "size")
+    quantile <- (100 - input$boxplots_trim_pct) / 100
+    args <- list(store$df_filtered, group_vars, isolate(input$boxplots_metric), quantile)
+    store$df_trimmed <- do.call(df_trim, args)
+    
+    # Deduce scale
+    scale <- if (input$boxplots_metric == "time") {
+      deduce_scale(store$df_trimmed[[isolate(input$boxplots_metric)]])
+    } else {
+      ""
+    }
+    
+    # Get accuracy
+    # TODO: Improve this pls! Not always working nice.y
+    if (scale == "ms") {
+      acc_var <- store$df_trimmed[[input$boxplots_metric]] * 100
+    } else if (scale == "sec") {
+      acc_var <- store$df_trimmed[[input$boxplots_metric]]
+    } else {
+      acc_var <- store$df_trimmed[[input$boxplots_metric]] / 10
+    }
+    
+    acc <- precision(acc_var)
+    
+    # Plot it!
+    store$boxplots_plot <- initialize_plot(
+      store$df_trimmed, 
+      isolate(input$boxplots_metric)
     ) +
-    add_boxplot() +
-    custom_fill() +
-    custom_theme() +
-    custom_scale(scale = scale, acc = acc, log10 = isolate(input$boxplots_log10)) +
-    custom_facet(isolate(input$boxplots_facet_vars), free_y = isolate(input$boxplots_free_y)) + 
-    labs(x = "Size", y = stringr::str_to_sentence(isolate(input$boxplots_metric)))
-  
-  output$boxplots_plot <- renderPlot({
-    store$boxplots_plot
-  },
-  res = 120)
+      add_boxplot() +
+      custom_fill() +
+      custom_theme() +
+      custom_scale(scale = scale, acc = acc, log10 = isolate(input$boxplots_log10)) +
+      custom_facet(isolate(input$boxplots_facet_vars), free_y = isolate(input$boxplots_free_y)) + 
+      labs(x = "Size", y = stringr::str_to_sentence(isolate(input$boxplots_metric)))
+    
+    output$boxplots_plot <- renderPlot({
+      store$boxplots_plot
+    },
+    res = 120)
+  }
 })
 
 # Add title to plot
@@ -95,7 +106,6 @@ observeEvent(input$boxplots_plot_title_btn, {
     labs(
       title = ttl
     ) +
-    # ggtitle(input$boxplots_plot_title) +
     theme(plot.title = element_text(
       size = input$boxplot_plot_title_size,
       hjust = input$boxplot_plot_title_pos))
