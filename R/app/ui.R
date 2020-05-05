@@ -1,7 +1,7 @@
 source("utils.R")
 source("write_shiny_dependencies.R")
 init_packages(PACKAGES_REQ, PACKAGES_LOAD)
-library(shinythemes)
+
 tagList(
   # Capture window size, used to save plots.
   tags$head(

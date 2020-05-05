@@ -47,7 +47,7 @@ It is also possible, and simple, to run the application locally with
 
 ```
 # install.packages("shiny")
-shiny::runGitHub("density_estimation", username = "tomicapretto", subdir = "simulation/R/app/")
+shiny::runGitHub("density_estimation", username = "tomicapretto", subdir = "R/app/")
 ```
 
-A good place to start once you're running the application is the **About**.
+A good place to start once you're running the application is the **About** tab.
