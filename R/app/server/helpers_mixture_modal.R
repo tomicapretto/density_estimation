@@ -14,7 +14,7 @@ custom_column <- function(id, label, value, min, max, step) {
   )
 }
 
-mixture_params_ui <- function(label, value, min = NA, max = NA, step = 0.1, prefix, wt = NA) {
+mixture_params_ui <- function(label, value, min = NA, max = NA, step = 0.5, prefix, wt = NA) {
   
   if (all(is.na(min))) min <- rep(NA, length(label))
   if (all(is.na(max))) max <- rep(NA, length(label))
