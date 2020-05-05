@@ -19,8 +19,7 @@ observeEvent(input$boxplots_estimator, {
 
 # Update `size` input according to `boxplots_bw`.
 observeEvent(input$boxplots_bw, {
-  
-  choices <- as.numeric(get_size_choices(input$boxplots_bw))
+  choices <- as.character(get_size_choices(input$boxplots_bw))
   updateCheckboxGroupButtons(
     session = session,
     inputId = "boxplots_size",
@@ -32,61 +31,81 @@ observeEvent(input$boxplots_bw, {
 
 # Produce plot
 observeEvent(input$boxplots_plot_btn, {
-  
-  # Plot data and settings
-  # Filter
   args <- list(store$df_static, input$boxplots_pdf, 
-               input$boxplots_estimator, input$boxplots_bw, as.numeric(input$boxplots_size))
-  store$df_filtered <- do.call(df_filter, args)
+               input$boxplots_estimator, input$boxplots_bw, 
+               as.numeric(input$boxplots_size))
   
-  # Trim
-  group_vars <- c("estimator", "bw", "size")
-  quantile <- (100 - input$boxplots_trim_pct) / 100
-  args <- list(store$df_filtered, group_vars, isolate(input$boxplots_metric), quantile)
-  store$df_trimmed <- do.call(df_trim, args)
-  
-  # Deduce scale
-  scale <- if (input$boxplots_metric == "time") {
-    deduce_scale(store$df_trimmed[[isolate(input$boxplots_metric)]])
+  if (check_boxplot_args(args)) {
+    # Check arguments are not empty
+    showNotification(
+      paste("At least one required argument is empty"),
+      type = "error"
+    )
   } else {
-    ""
-  }
-  
-  # Get accuracy
-  # TODO: Improve this pls! Not always working nice.y
-  if (scale == "ms") {
-    acc_var <- store$df_trimmed[[input$boxplots_metric]] * 100
-  } else if (scale == "sec") {
-    acc_var <- store$df_trimmed[[input$boxplots_metric]]
-  } else {
-    acc_var <- store$df_trimmed[[input$boxplots_metric]] / 10
-  }
-  
-  acc <- precision(acc_var)
-  
-  # Plot it!
-  store$boxplots_plot <- initialize_plot(
-    store$df_trimmed, 
-    isolate(input$boxplots_metric)
+    # Plot data and settings
+    # Filter
+    store$df_filtered <- do.call(df_filter, args)
+    
+    # Convert facetting variables to factors with order resembling the one in the input
+    store$df_filtered <- df_facet_order(store$df_filtered, input)
+    
+    # Trim
+    group_vars <- c("estimator", "bw", "size")
+    quantile <- (100 - input$boxplots_trim_pct) / 100
+    args <- list(store$df_filtered, group_vars, isolate(input$boxplots_metric), quantile)
+    store$df_trimmed <- do.call(df_trim, args)
+    
+    # Deduce scale
+    scale <- if (input$boxplots_metric == "time") {
+      deduce_scale(store$df_trimmed[[isolate(input$boxplots_metric)]])
+    } else {
+      ""
+    }
+    
+    # Get accuracy
+    # TODO: Improve this pls! Not always working nice.y
+    if (scale == "ms") {
+      acc_var <- store$df_trimmed[[input$boxplots_metric]] * 100
+    } else if (scale == "sec") {
+      acc_var <- store$df_trimmed[[input$boxplots_metric]]
+    } else {
+      acc_var <- store$df_trimmed[[input$boxplots_metric]] / 10
+    }
+    
+    acc <- precision(acc_var)
+    
+    # Plot it!
+    store$boxplots_plot <- initialize_plot(
+      store$df_trimmed, 
+      isolate(input$boxplots_metric)
     ) +
-    add_boxplot() +
-    custom_fill() +
-    custom_theme() +
-    custom_scale(scale = scale, acc = acc, log10 = isolate(input$boxplots_log10)) +
-    custom_facet(isolate(input$boxplots_facet_vars), free_y = isolate(input$boxplots_free_y)) + 
-    labs(x = "Size", y = stringr::str_to_sentence(isolate(input$boxplots_metric)))
-  
-  output$boxplots_plot <- renderPlot({
-    store$boxplots_plot
-  },
-  res = 120)
+      add_boxplot() +
+      custom_fill() +
+      custom_theme() +
+      custom_scale(scale = scale, acc = acc, log10 = isolate(input$boxplots_log10)) +
+      custom_facet(isolate(input$boxplots_facet_vars), free_y = isolate(input$boxplots_free_y)) + 
+      labs(x = "Size", y = stringr::str_to_sentence(isolate(input$boxplots_metric)))
+    
+    output$boxplots_plot <- renderPlot({
+      store$boxplots_plot
+    },
+    res = 120)
+  }
 })
 
 # Add title to plot
 observeEvent(input$boxplots_plot_title_btn, {
-  
+  # or nchar(ttl) == 0
+  if (trimws(input$boxplots_plot_title) == "") {
+    ttl <- NULL
+  } else {
+    ttl <- input$boxplots_plot_title
+  }
+
   store$boxplots_plot <- store$boxplots_plot +
-    ggtitle(input$boxplots_plot_title) +
+    labs(
+      title = ttl
+    ) +
     theme(plot.title = element_text(
       size = input$boxplot_plot_title_size,
       hjust = input$boxplot_plot_title_pos))
@@ -127,7 +146,6 @@ observeEvent(input$boxplots_plot_btn, {
   })
 }, once = TRUE)
 
-
 # Output plot according to size setings
 observeEvent(input$boxplots_plot_btn, {
   output$boxplots_plot_UI <- renderUI({
@@ -153,16 +171,29 @@ observeEvent(input$boxplots_plot_btn, {
   output$boxplots_plot_title_settings_ui <- renderUI({
     fluidRow(
       column(
-        4,
-        textInput("boxplots_plot_title", "Title")),
+        width = 4,
+        textInput(
+          inputId = "boxplots_plot_title", 
+          label = "Title"
+        )
+      ),
       column(
-        4,
-        numericInput("boxplot_plot_title_size", "Title size", value = 14, min = 2)),
+        width = 4,
+        numericInput(
+          inputId = "boxplot_plot_title_size", 
+          label = "Title size", 
+          value = 14, 
+          min = 2
+        )
+      ),
       column(
-        4,
-        selectInput("boxplot_plot_title_pos", "Title position", 
-                    choices = c("Left" = 0, "Center" = 0.5, "Right" = 1),
-                    selected = 0)
+        width = 4,
+        selectInput(
+          inputId = "boxplot_plot_title_pos", 
+          label = "Title position", 
+          choices = c("Left" = 0, "Center" = 0.5, "Right" = 1),
+          selected = 0
+        )
       )
     )
   })
@@ -203,7 +234,7 @@ output$downloadPlot <- downloadHandler(
   content = function(file) {
     png(
       filename = file, 
-      width = as.numeric(input$boxplots_plot_width / 100) * (input$dimension[1] * 0.74),
+      width = as.numeric(input$boxplots_plot_width / 100) * (input$dimension[1] * 0.72),
       height = input$boxplots_plot_height, 
       res = 120)
     print(store$boxplots_plot)

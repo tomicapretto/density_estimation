@@ -52,9 +52,11 @@ observeEvent(input$python_add_path_btn, {
     show("mainLayout")
     removeModal()
     store$PYTHON_PATH <- init_python_custom(input)
+    store$PYTHON_LOADED <- TRUE
     source("server/panel1.R", local = TRUE)$value
     source("server/panel2.R", local = TRUE)$value
     source("server/panel3.R", local = TRUE)$value
+    source("server/panel4.R", local = TRUE)$value
   }
 })
 
@@ -65,6 +67,8 @@ observeEvent(input$python_cancel_btn, {
     inputId = "tabs", 
     target = "Density plots"
   )
+  store$PYTHON_LOADED <- FALSE
   source("server/panel1.R", local = TRUE)$value
   source("server/panel2.R", local = TRUE)$value
+  source("server/panel4.R", local = TRUE)$value
 })

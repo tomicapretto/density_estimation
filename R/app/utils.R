@@ -1,3 +1,11 @@
+# Packages ---------------------------------------------------------------------
+PACKAGES_REQ <- c("shiny", "shinyBS", "shinyWidgets", "shinyjs", 
+                  "shinybusy", "ggplot2", "dplyr", "reticulate", 
+                  "stringr", "stringi", "purrr")
+
+PACKAGES_LOAD <- setdiff(PACKAGES_REQ, c("reticulate", "stringr",
+                                         "stringi", "purrr"))
+
 # Colors -----------------------------------------------------------------------
 DARK_GRAY <- "#2d3436"
 DARK_RED = "#c0392b"
@@ -63,6 +71,23 @@ pdfCodes <- c(
 
 pdf_choices <- setNames(pdfNames, pdfCodes)
 
+pdfFacetLbls <- c(
+  "N(0, 1)",
+  "N(0, 2)",
+  "0.5*N(-12, 0.5) + 0.5*N(12, 0.5)",
+  "0.5*N(0, 0.1) + 0.5*N(5, 1)",
+  "0.67*N(0, 1) + 0.33*N(0, 0.1)",
+  "0.75*N(0, 1) + 0.25*N(1.5, 0.33)",
+  "0.6*N(3.5, 0.5) + 0.4*N(9, 1.5)",
+  "Ga(1, 1)",
+  "Ga(2, 1)",
+  "Be(2.5, 1.5)",
+  "LogN(0, 1)"
+)
+
+pdf_facet_lbls <- setNames(pdfFacetLbls, pdfNames)
+
+
 # Panel grid labels
 bw_lbls <- c(
   "silverman" = "Silverman's rule",
@@ -102,13 +127,13 @@ check_packages <- function(packages, load = FALSE, quietly = FALSE) {
   }
 }
 
-init_packages <- function(packages) {
+init_packages <- function(PACKAGES_REQ, PACKAGES_LOAD) {
   sys_info <- Sys.info()
   if (sys_info[["user"]] == "shiny" | sys_info[["effective_user"]] == "shiny") {
     source("shiny_dependencies.R")
   } else {
-    check_packages(packages)
-    load_packages(setdiff(packages, "reticulate"))
+    check_packages(PACKAGES_REQ)
+    load_packages(PACKAGES_LOAD)
   }
 }
 
