@@ -3,7 +3,7 @@
 boxplots_example1_rctv <- reactive(input$boxplots_example_1)
 boxplots_example1_d1 <- debounce(boxplots_example1_rctv, 100)
 boxplots_example1_d2 <- debounce(boxplots_example1_rctv, 300)
-boxplots_example1_d3 <- debounce(boxplots_example1_rctv, 500)
+boxplots_example1_d3 <- debounce(boxplots_example1_rctv, 600)
 
 observeEvent(input$boxplots_example_1, {
   updateTabsetPanel(
@@ -74,7 +74,7 @@ boxplots_example2_rctv <- reactive(input$boxplots_example_2)
 boxplots_example2_d1 <- debounce(boxplots_example2_rctv, 100)
 boxplots_example2_d2 <- debounce(boxplots_example2_rctv, 300)
 boxplots_example2_d3 <- debounce(boxplots_example2_rctv, 450)
-boxplots_example2_d4 <- debounce(boxplots_example2_rctv, 550)
+boxplots_example2_d4 <- debounce(boxplots_example2_rctv, 650)
 
 observeEvent(input$boxplots_example_2, {
   updateTabsetPanel(
@@ -172,8 +172,8 @@ output$density_examples_links <- renderUI({
 density_example1_rctv <- reactive(input$density_example_1)
 density_example1_d1 <- debounce(density_example1_rctv, 400)
 density_example1_d2 <- debounce(density_example1_rctv, 800)
-density_example1_d3 <- debounce(density_example1_rctv, 1200)
-density_example1_d4 <- debounce(density_example1_rctv, 1500)
+density_example1_d3 <- debounce(density_example1_rctv, 1300)
+density_example1_d4 <- debounce(density_example1_rctv, 1900)
 
 
 observeEvent(input$density_example_1, {
@@ -247,10 +247,10 @@ observeEvent(density_example1_d4(), {
 density_example2_rctv <- reactive(input$density_example_2)
 density_example2_d1 <- debounce(density_example2_rctv, 300)
 density_example2_d2 <- debounce(density_example2_rctv, 700)
-density_example2_d3 <- debounce(density_example2_rctv, 1100)
-density_example2_d4 <- debounce(density_example2_rctv, 1500)
-density_example2_d5 <- debounce(density_example2_rctv, 1800)
-density_example2_d6 <- debounce(density_example2_rctv, 2100)
+density_example2_d3 <- debounce(density_example2_rctv, 1000)
+density_example2_d4 <- debounce(density_example2_rctv, 1700)
+density_example2_d5 <- debounce(density_example2_rctv, 2300)
+density_example2_d6 <- debounce(density_example2_rctv, 2800)
 
 observeEvent(input$density_example_2, {
   updateTabsetPanel(
@@ -307,7 +307,6 @@ observeEvent(density_example2_d3(), {
     value = 3
   )
 })
-
 
 observeEvent(density_example2_d4(), {
   updateSelectInput(

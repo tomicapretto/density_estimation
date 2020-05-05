@@ -1,7 +1,7 @@
 source("utils.R")
 source("write_shiny_dependencies.R")
 init_packages(PACKAGES_REQ, PACKAGES_LOAD)
-
+library(shinythemes)
 tagList(
   # Capture window size, used to save plots.
   tags$head(
@@ -29,6 +29,8 @@ tagList(
       navbarPage(
         "Explorer!",
         id = "tabs",
+        # theme = shinytheme("united"),
+        theme = "theme.css",
         source("ui/panel1.R", local = TRUE)$value,
         source("ui/panel2.R", local = TRUE)$value,
         source("ui/panel3.R", local = TRUE)$value,
@@ -37,3 +39,4 @@ tagList(
     )
   )
 )
+
