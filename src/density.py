@@ -2,13 +2,11 @@
 Functions to compute kernel density estimates
 """
 
-
 import numpy as np
 from scipy.signal import gaussian, convolve  # pylint: disable=no-name-in-module
 
-from density_utils import check_type, len_warning, get_grid, get_bw, get_mixture
-
-
+# Own
+from .density_utils import check_type, len_warning, get_grid, get_bw, get_mixture
 
 def estimate_density(
     # pylint: disable=too-many-arguments,too-many-locals
@@ -24,15 +22,65 @@ def estimate_density(
     custom_lims=None,
 ):
     """
-    Write me!
+    1 dimensional density estimation.
+    
+    Given an array of data points `x` it returns an estimate of
+    the probability density function that generated the samples in `x`.
+    
+    Parameters
+    ----------
+    x : 1-D numpy array
+        1 dimensional array of sample data from the 
+        variable for which a density estimate is desired.
+    bw: int, float or str, optional
+        If numeric, indicates the bandwidth and must be positive.
+        If str, indicates the method to estimate the bandwidth and must be
+        one of "scott", "silverman", "lscv", "sj", "isj" or "experimental".
+        Defaults to "silverman".
+    grid_len: int, optional
+        The number of intervals used to bin the data points.
+        Defaults to 256.
+    extend: boolean, optional
+        Whether to extend the observed range for `x` in the estimation.
+        It extends each bound by a multiple of the standard deviation of `x`
+        given by `extend_fct`. Defaults to True.
+    bound_correction: boolean, optional
+        Whether to perform boundary correction on the bounds of `x` or not.
+        Defaults to False.
+    adaptive: boolean, optional
+        Indicates if the bandwidth is adaptative or not.
+        It is the recommended approach when there are multiple modalities
+        with different spread. 
+        It is not compatible with convolution. Defaults to False.
+    extend_fct: float, optional
+        Number of standard deviations used to widen the 
+        lower and upper bounds of `x`. Defaults to 0.5.
+    bw_fct: float, optional
+        A value that multiplies `bw` which enables tuning smoothness by hand.
+        Must be positive. Defaults to 1 (no modification).
+    bw_return: bool, optional
+        Whether to return the estimated bandwidth in addition to the 
+        other objects. Defaults to False.
+    custom_lims: list or tuple, optional
+        A list or tuple of length 2 indicating custom bounds
+        for the range of `x`. Defaults to None which disables custom bounds.
+    
+    Returns
+    -------
+    grid : Gridded numpy array for the x values.
+    pdf : Numpy array for the density estimates.
+    bw: optional, the estimated bandwidth.
     """
-    assert isinstance(custom_lims, (list, tuple))
-    assert len(custom_lims) == 2
-    assert custom_lims[0] < custom_lims[1]
-    assert isinstance(bw_fct, (int, float))
 
     # Check `x` is from appropiate type
     x = check_type(x)
+    
+    # Assert `bw_fct` is numeric and positive
+    # Note: a `bool` will not trigger the first AssertionError, 
+    #       but it is not a problem since True will be 1
+    #       and False will be 0, which triggers the second AssertionError.
+    assert isinstance(bw_fct, (int, float))
+    assert bw_fct > 0
 
     # Preliminary calculations
     x_len = len(x)
@@ -40,8 +88,7 @@ def estimate_density(
     x_max = np.max(x)
     x_std = np.std(x)
 
-    # Length warning:
-    # Not completely sure whether it is necessary
+    # Length warning: Not completely sure if it is necessary
     len_warning(x_len)
 
     grid_len, grid_min, grid_max = get_grid(
@@ -207,7 +254,33 @@ def estimate_density_em(
 def kde_convolution(x, bw, grid_len, grid_min, grid_max, bound_correction):
     # pylint: disable=too-many-arguments
     """
-    Write me!
+    1 dimensional Gaussian kernel density estimation via 
+    convolution of the binned relative frequencies and a Gaussian filter.
+    It does NOT use FFT because there is no real gain for the 
+    number of bins used.
+    This is an internal function used by `estimate_density()`.
+    
+    Parameters
+    ----------
+    x : 1-D numpy array
+        1 dimensional array of sample data from the 
+        variable for which a density estimate is desired.
+    bw: int or float
+        Bandwidth parameter, a.k.a. the standard deviation
+        of the Gaussian kernel.
+    grid_len: int
+        The number of intervals used to bin the data points.
+    grid_min: float
+        Minimum value of the grid
+    grid_max: float
+        Maximum value of the grid
+    bound_correction: boolean
+        Whether to perform boundary correction on the bounds of `x` or not.
+        
+    Returns
+    -------
+    grid : Gridded numpy array for the x values.
+    pdf : Numpy array for the density estimates.
     """
     # Calculate relative frequencies per bin
     f, _ = np.histogram(x, bins=grid_len, range=(grid_min, grid_max), density=True)
@@ -235,7 +308,36 @@ def kde_convolution(x, bw, grid_len, grid_min, grid_max, bound_correction):
 def kde_adaptive(x, bw, grid_len, grid_min, grid_max, bound_correction):
     # pylint: disable=too-many-arguments,too-many-locals
     """
-    Write me!
+    1 dimensional adaptive Gaussian kernel density estimation.
+    The implementation uses the binning technique. 
+    However, since there is not an unique `bw`, the convolution 
+    is not possible.
+    The alternative implemented in this function is known as Anderson's method.
+    This is an internal function used by `estimate_density()`.
+    
+    Parameters
+    ----------
+    x : 1-D numpy array
+        1 dimensional array of sample data from the 
+        variable for which a density estimate is desired.
+    bw: int or float
+        Bandwidth parameter, a.k.a. the standard deviation
+        of the Gaussian kernel.
+        This bandwidth parameter is then modified for each bin.
+    grid_len: int
+        The number of intervals used to bin the data points.
+    grid_min: float
+        Minimum value of the grid
+    grid_max: float
+        Maximum value of the grid
+    bound_correction: boolean
+        Whether to perform boundary correction on the bounds of `x` or not.
+        
+    Returns
+    -------
+    grid : Gridded numpy array for the x values.
+    pdf : Numpy array for the density estimates.
+    
     """
     # Computations for bandwidth adjustment
     pilot_grid, pilot_pdf = kde_convolution(x, bw, grid_len, grid_min, grid_max, bound_correction)
