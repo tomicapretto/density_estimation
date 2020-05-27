@@ -55,34 +55,36 @@ choices_size_default <- c(200, 500, 1000, 5000, 10000)
 pdfNames <- c(
   "gaussian_1", "gaussian_2", "gmixture_1", "gmixture_2",
   "gmixture_3", "gmixture_4", "gmixture_5", "gamma_1",
-  "gamma_2", "beta_1", "logn_1")
+  "gamma_2", "logn_1", "beta_1", "skwd_mixture1")
 
 pdfCodes <- c(
   "N(0,1)", "N(0, 2)", 
-  "\\frac{1}{2}N(-12, \\frac{1}{2}) + \\frac{1}{2}N(12, \\frac{1}{2})", 
-  "\\frac{1}{2} N(0, \\frac{1}{10}) + \\frac{1}{2} N(5, 1)",
   "\\frac{2}{3} N(0, 1) + \\frac{1}{3} N(0, 0.1)",
+  "\\frac{1}{2} N(-12, \\frac{1}{2}) + \\frac{1}{2} N(12, \\frac{1}{2})", 
+  "\\frac{1}{2} N(0, \\frac{1}{10}) + \\frac{1}{2} N(5, 1)",
   "\\frac{3}{4} N(0, 1) + \\frac{1}{4} N(1.5, \\frac{1}{3})",
   "\\frac{3}{5} N(3.5, \\frac{1}{2}) + \\frac{2}{5} N(9, 1.5)",
   "\\Gamma (k = 1, \\theta = 1)",
   "\\Gamma (k = 2, \\theta = 1)",
+  "\\text{Log}N(0, 1)",
   "\\beta (a = 2.5, b = 1.5)",
-  "\\text{Log}N(0, 1)")
+  "\\frac{7}{10}\\Gamma(k = 1, \\theta = 1) + \\frac{2}{10}N(5, 1) + \\frac{1}{10}N(8, \\frac{3}{4})")
 
 pdf_choices <- setNames(pdfNames, pdfCodes)
 
 pdfFacetLbls <- c(
   "N(0, 1)",
   "N(0, 2)",
+  "0.67*N(0, 1) + 0.33*N(0, 0.1)",
   "0.5*N(-12, 0.5) + 0.5*N(12, 0.5)",
   "0.5*N(0, 0.1) + 0.5*N(5, 1)",
-  "0.67*N(0, 1) + 0.33*N(0, 0.1)",
   "0.75*N(0, 1) + 0.25*N(1.5, 0.33)",
   "0.6*N(3.5, 0.5) + 0.4*N(9, 1.5)",
   "Ga(1, 1)",
   "Ga(2, 1)",
+  "LogN(0, 1)",
   "Be(2.5, 1.5)",
-  "LogN(0, 1)"
+  "0.7Ga(1.5, 1.0) + 0.2N(5,1) + 0.1N(8, 0.75)"
 )
 
 pdf_facet_lbls <- setNames(pdfFacetLbls, pdfNames)

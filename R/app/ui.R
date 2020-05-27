@@ -29,7 +29,6 @@ tagList(
       navbarPage(
         "Explorer!",
         id = "tabs",
-        # theme = shinytheme("united"),
         theme = "theme.css",
         source("ui/panel1.R", local = TRUE)$value,
         source("ui/panel2.R", local = TRUE)$value,

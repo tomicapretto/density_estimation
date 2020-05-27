@@ -1,0 +1,2 @@
+This is 0.5 * N(0, 0.1) + 0.5 * N(5, 1)
+All cases with n = 1000.
