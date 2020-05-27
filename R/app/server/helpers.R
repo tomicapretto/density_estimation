@@ -130,7 +130,6 @@ df_filter <- function(df, .pdf, .estimator, .bw, .size) {
     )
 }
 
-
 df_facet_order <- function(df, input) {
   cols <- input[["boxplots_facet_vars"]]
   if (!any(cols %in% c("bw", "estimator", "pdf"))) return(df)
@@ -170,18 +169,6 @@ df_trim <- function(df, .group_vars, .trim_var, .quantile) {
     ) %>%
     select(-upper_bound)
 }
-
-deduce_scale <- function(x) {
-  if ((quantile(x, 0.75, na.rm = TRUE)) > 1) {
-    return("sec") 
-  } else {
-    return("ms")
-  }
-}
-
-# Specify accuracy by default
-precision <- scales:::precision
-
 # Plotting functions -----------------------------------------------------------
 check_boxplot_args <- function(args) {
   # First sapply checks NULL as well
@@ -223,37 +210,125 @@ custom_theme <- function() {
     )
 }
 
-custom_scale <- function(limits = NULL,  breaks = waiver(),
-                         scale = "ms", acc = 0.1, log10 = FALSE) {
+custom_scale <- function(limits = NULL, prec = 0.1, log10 = FALSE, time_flag = FALSE) {
   scale_func <- if (log10) scale_y_log10 else scale_y_continuous
-  scale_func(
-    limits = limits,
-    breaks = breaks,
-    labels = get_label(scale, acc)
+  if (time_flag) {
+    scale_func(
+      limits = limits,
+      breaks = waiver(),
+      labels = get_labels(prec)
+    )
+  } else {
+    scale_func(
+      limits = limits,
+      breaks = waiver()
+    )
+  }
+
+}
+
+precision <- function (x) {
+  rng <- range(x, na.rm = TRUE, finite = TRUE)
+  span <- diff(rng)
+  if (span == 0) {
+    return(1)
+  }
+  10 ^ (floor(log10(span)))
+}
+
+get_suffix <- function(prec) {
+  if (prec >= 0.1) {
+    " sec"
+  } else if (prec %in% c(0.01, 0.001)) {
+    " ms"
+  } else if (prec <= 0.0001) {
+    " \u03BCs"
+  }
+}
+
+get_scale <- function(prec) {
+  if (prec >= 0.1) {
+    1
+  } else if (prec %in% c(0.01, 0.001)) {
+    1 / 1e-03
+  }
+  else if (prec <= 0.0001) {
+    1 / 1e-06
+  } else {
+    1 / prec
+  }
+}
+
+get_acc <- function(prec) {
+  if (prec >= 0.1) {
+    digits = 2 - log10(prec)
+  } else if (prec %in% c(0.01, 0.001)) {
+    digits = 2 - log10(prec / 1e-03)
+  }
+  else if (prec <= 0.0001) {
+    digits = 2 - log10(prec / 1e-06)
+  } else {
+    digits = 2
+  }
+  1 / 10 ^ digits
+}
+
+get_labels <- function(prec) {
+  scales::number_format(
+    accuracy = get_acc(prec), 
+    scale = get_scale(prec), 
+    suffix = get_suffix(prec)
   )
 }
 
+# x <- c(rnorm(10, mean = 0.000200 , sd = 0.0001),
+#        rnorm(10, mean = 0.0000500 , sd = 0.00001),
+#        rnorm(10, mean = 0.000003, sd = 0.000001))
+# prec <- precision(x)
+# get_labels(prec)(x)
+# # x
+# 
+# x <- c(rnorm(10, mean = 0.05 , sd = 0.01),
+#        rnorm(10, mean = 0.004, sd = 0.001))
+# prec <- precision(x)
+# get_labels(prec)(x)
+# x
+# 
+# x <- c(rnorm(10, mean = 0.7, sd = 0.1),
+#        rnorm(10, mean = 0.05 , sd = 0.01),
+#        rnorm(10, mean = 0.004, sd = 0.001))
+# prec <- precision(x)
+# get_labels(prec)(x)
+# x
+# 
+# x <- rnorm(50, mean = 1 , sd = 0.01)
+# prec <- precision(x)
+# get_labels(prec)(x)
+# x
+# 
+# x <- rnorm(50, mean = 5 , sd = 1)
+# prec <- precision(x)
+# get_labels(prec)(x)
+# x
+
 custom_facet <- function(..., free_y, nrow = 1) {
-  
   args <- as.list(...)
-  
   if (!any(args %in% c("bw", "estimator", "pdf"))) return(NULL)
-  
   scales <- if (free_y) "free_y" else "fixed"
-  
+
   if (length(args) == 1) {
     col_labs <- lbls_list[[args[[1]]]]
-    
+
     form <- as.formula(paste(".", args[[1]], sep = "~"))
-    facet_grid(form, scales = scales, 
+    facet_grid(form, scales = scales,
                labeller = labeller(.cols = col_labs))
-    
+
   } else if (length(args) == 2) {
     row_labs <- lbls_list[[args[[1]]]]
     col_labs <- lbls_list[[args[[2]]]]
-    
+
     form <- as.formula(paste(args[[1]], args[[2]], sep = "~"))
-    facet_grid(form, scales = scales, 
+    facet_grid(form, scales = scales,
                labeller = labeller(.cols = col_labs, .rows = row_labs))
   }
 }
@@ -268,27 +343,6 @@ get_size_choices <- function(x) {
   f <- function (x) switch(x, "sj" = choices_size_sj, choices_size_default)
   l <- lapply(x, f)
   Reduce(union, l)
-}
-
-miliseconds <- function(acc = 1) {
-  scales::number_format(
-    accuracy = acc,
-    scale = 1000,
-    suffix = " ms")
-}
-
-seconds <- function(acc = 1) {
-  scales::number_format(
-    accuracy = acc,
-    scale = 1,
-    suffix = " secs")
-}
-
-get_label <- function(scale, acc) {
-  switch(scale, 
-         ms = miliseconds(acc),
-         sec = seconds(acc),
-         scales::number_format(acc))
 }
 
 # Continuous variables arguments -----------------------------------------------
@@ -320,7 +374,7 @@ cont_dist_mins <- list(
   gamma = c(0, 0),
   exp = 0,
   beta = c(0, 0),
-  lnorm = c(0, 0),
+  lnorm = c(-5, 0),
   weibull = c(0, 0),
   unif = c(-100, -100)
 )
@@ -331,7 +385,7 @@ cont_dist_mins_check <- list(
   gamma = c(0, 0.001),
   exp = 0.001,
   beta = c(0.01, 0.01),
-  lnorm = c(0.01, 0.01),
+  lnorm = c(-5, 0.01),
   weibull = c(0.01, 0.01),
   unif = c(-100, -100)
 )

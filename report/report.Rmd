@@ -1,0 +1,699 @@
+---
+title: "Report"
+author: "Tomas"
+date: "`r format(Sys.time(), '%d-%m-%Y')`"
+output: html_document
+---
+
+<!-- * Porque hago la comparacion -->
+<!-- * Que metodos comparo -->
+<!-- * Como los voy a comparar -->
+<!-- * Donde se pueden encontrar mas detalles -->
+
+<!-- * Comparacion -->
+<!--   + Densidades seleccionadas -->
+<!--   + Escenarios de comparacion -->
+<!--   + Metricas utilizadas -->
+<!-- * Analisis de resultados -->
+<!--   + Analisis en termino de tiempo -->
+<!--   + Analisis en termno de error -->
+<!--   + Ejemplos -->
+<!-- * Recomendaciones -->
+
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE, out.width = "100%", fig.align = "center")
+source("utils.R")
+
+# Define colors
+LIGHT_BLUE <- "#56B4E9"
+LIGHT_GRAY <- "#474747"
+DARK_RED <- "#c0392b"
+```
+
+# Why this study and this report
+
+When doing data analysis, we are estimating probability density functions very 
+frequently. Every time we take sample data from a continuous variable 
+and generate a density plot to quickly visualize the underlying 
+distribution, we are using a density estimator. Every time we explore our 
+posteriors in a Bayesian modelling context, we are using a density estimator. 
+Even those who dare to replace the harmless and truthful boxplots with violin plots, 
+are using a density estimator.
+
+It is likely we have never wondered about the method used to generate our density plot. 
+It may even be the case that we have never realized that what 
+generated the probability distribution in front of our eyes is 
+actually an estimator, and not some kind of magic algorithm.
+And as always we try to estimate something in statistics, 
+there are many ways to do it. 
+
+The most popular and most widely used estimation method is the combination
+of the Gaussian Kernel Denstiy Estimator with its bandwidth parameter
+estimated via a rule of thumb that minimizes the asymptotic 
+estimation error assuming the sample came from a Gaussian distribution 
+(we refer to this combination as the **standard method**).
+It usually performs very well when the target distribution
+presents a single mode and do not suffer from high skewness.
+Also, it can be implemented with relative ease and 
+computed very efficiently.
+
+Even though that when working with real data we never really know 
+whether our estimate is close to the true probability density function or not,
+the performance of the standard method in a variety of scenarios is known. 
+First, we can mention some characteristics due to using a bandwidth 
+that assumes the objective function is Gaussian:
+
+* The closer the true probability density function is to a Gaussian, 
+the better the estimate.
+
+* It tends to oversmooth (and sometimes very seriously) when
+the target distribution presents multiple modes that are well separated. 
+Its performance is even poorer if the spread around the modes is different.
+
+In short, when the wiggliness of the targetd istribution differs 
+largely from the one of a Gaussian, we can expect our estimation to be poor.
+
+We can also mention some limitations due to using a Gaussian KDE:
+
+* Theoretically, the method assumes the support of the density function
+estimated is the real line. In practice, the reported estimation usually 
+extends the range of the observed data by some multiple of its standard deviation.
+This should not be the case when the domain of the function is bounded.
+It does not make sense to report positive density in regions where it is 
+known to be zero beforehand (i.e. when our variable represents a distance). 
+There are some suggestions on how to fix this boundary issue,
+but they are not always supported in computer implementations.
+
+* The classic Gaussian KDE has a single bandwidth parameter, and consequently
+it applies the same smoothness in all regions of the density. 
+We are going to see that this characteristic is what makes it a 
+poor estimator when there are multiple modes with different spread
+and/or pronounced peaks, independently of how the bandwidth is estimated.
+
+And a limitation that arises from the combination of both:
+
+* The standard method was just not born to estimate highly skewed distributions. 
+We have a poor bandwith determination due to the skewness 
+and a problem in the boundaries because of the nature of the Gaussian KDE.
+
+Concretely, our work is motivated by the well known drawbacks of the 
+standard method used to estimate probability density functions. 
+Our ultimate goal is to implement an alternative that performs 
+better in those cases where the standard method does not work well but
+remains reliable when it does a good job.
+
+In this report we start by giving a summary of the simulation study 
+carried out. We mention the methods compared, the conditions evaluated, 
+and the metrics computed. Then, we proceed to interpret the results and 
+conclude with some general advice based on our analysis.
+
+# The study 
+
+In our study we compare different methods to estimate 
+one dimiensional probability density functions. The term *method* emphasizes that 
+we not only choose a density estimator, but also an estimator for its parameters. 
+
+An outline of the simulation is as follows:
+
+1. Generate random values from a given probability distribution and a given sample size.
+1. Estimate the density function with each one of the methods under study.
+1. Compute the estimation error and the computation time.
+
+This process is repeated a number of times for different 
+sample sizes and different probability distributions.
+
+## Methods compared
+
+Here we mention and briefly describe each of the methods under study.
+A detailed explanation together with Python implementations can be found [here](https://github.com/tomicapretto/density_estimation).
+
+### Density estimators
+
+Before introducing the estimators we have to give some context.
+Let $\{X_1, \cdots, X_N \}$ be an independent random sample from 
+an unknown continuous probability density function $f$ in a 
+certain space $\mathcal{X} \subset \mathbb{R}$. 
+A kernel density estimator for $f$ is defined as
+
+$$
+\begin{array}{cc}
+  \displaystyle \hat{f}(x; h) = 
+  \frac{1}{Nh}\sum_{i=1}^N{\kappa\left(\frac{x - X_i}{h}\right)},
+  & x \in \mathbb{R}
+\end{array}
+$$
+
+where the **kernel function** $\kappa$ is (usually) a symmetric density function 
+in $\mathbb{R}$ and $h$ is a positive smoothing parameter called **bandwidth**. 
+Larger values of $h$ produce smoother estimations, 
+while lower values produce more sinuous ones.
+
+#### Gaussian Kernel Density Estimator
+
+The **Gaussian kernel density estimator** arises when $\kappa$ is the 
+probability density function of a standard Gaussian distribution. 
+Thus, the estimator is of the form
+
+$$
+ \begin{array}{cc}
+  \displaystyle \hat{f}(x; h) = 
+  \frac{1}{Nh}\sum_{i=1}^N{\varphi\left( \frac{x - X_i}{h}\right)}, 
+  & x \in \mathbb{R}
+ \end{array}
+$$
+
+where
+
+$$
+\displaystyle \varphi(x) = \frac{1}{\sqrt{2\pi}}e^{-\frac{x^2}{2}}
+$$
+
+Putting all the pieces together, the estimator results in
+
+$$
+\hat{f}(x;h) = \frac{1}{Nh}\sum_{i=1}^N{\frac{1}{\sqrt{2\pi}}e^{-\frac{1}{2}\left(\frac{x - X_i}{h}\right)^2}}
+$$
+
+which can be seen as the simple average of $N$ Gaussian distributions centered at each 
+$X_i$ with common standard deviation $h$.
+
+#### Adaptive Gaussian Kernel Density Estimator
+
+We use a type of adaptive Gaussian KDE also known as **sample point estimator**.
+While the classic kernel density estimator uses a constant bandwidth $h$ 
+for every kernel, the sample point estimator uses a variable bandwidth that
+depends on $X_i$. The estimate of $f$ at every $x$ is then a 
+simple average of differently scaled kernels centered at each data point $X_i$. 
+
+The estimator is defined as follows:
+
+$$
+\hat{f}_{SP}(x; h(X_i)) = \frac{1}{N} \sum_{i=1}^{N}{ \frac{1}{h(X_i)} \kappa \left(\frac{x - X_i}{h(X_i)}\right)}
+$$
+
+Its name is due to the fact that the bandwidth $h(X_i)$ 
+depends on the sample point $X_i$. For more deatails on how $h(X_i)$ is calculated 
+see [this notebook](https://github.com/tomicapretto/density_estimation/blob/master/notebooks/04_adaptive_bandwidth_kde.ipynb).
+
+#### Gaussian mixture fitted via EM algorithm
+
+Both the classic Gaussian KDE and its adaptive version known as sample point estimator
+or sample point Gaussian KDE can be seen as a mixture model. In both cases you are 
+generating a probability density function by averaging Gaussian densities. 
+Then, we can write both models in a more general manner as
+
+$$
+ \begin{array}{cc}
+  \displaystyle \hat{f}(x) = 
+  \sum_{i=1}^{N_c}{w_i \cdot \varphi\left(\frac{x -\mu_i}{\sigma_i}\right)}, 
+  & x \in \mathbb{R}
+ \end{array}
+$$
+
+where each component is a Gaussian density with mean $\mu_i$,
+standard deviation $\sigma_i$ and a weight $w_i$. 
+The estimators we have already introduced are particular cases
+with the following characteristics:
+
+* Classic Gaussian KDE
+  + $N_c = N$: The number of observations^[Fastest implementations use binning 
+    so $N$ is the number of bins instead of the number of observations.].
+  + $\mu_i = X_i$: Each one corresponds to one of the data points.
+  + $\sigma_i = h$: A unique bandwidth for all the components.
+  + $w_i$: All the components in the mixture have the same weight $\frac{1}{N}$.
+
+* Sample Point Gaussian KDE
+  + $N_c = N$: The number of observations.
+  + $\mu_i = X_i$: Each one corresponds to one of the data points..
+  + $\sigma_i = h(X_i)$: There is a different bandwidth for each component in the mixture.
+  + $w_i$: All the components in the mixture have the same weight $\frac{1}{N}$.
+  
+The EM algorithm enables us to fit all the components of the
+Gaussian mixture model entirely from the data. 
+An explanation of this algorithm in this context can be found
+[here](https://github.com/tomicapretto/density_estimation/blob/master/notebooks/04_adaptive_bandwidth_kde.ipynb).
+  
+* Gaussian mixture fitted via the EM algorithm
+  + $N_c = N^*$: Not equal to the number of observations but it depends on it.
+    In our implementation it ranges from 10 to 30.
+  + $\mu_i$: Estimated by the EM algorithm.
+  + $\sigma_i$: Estimated by the EM algorithm.
+  + $w_i$: Estimated by the EM algorithm.
+  
+In summary, as we move forward the mixture model becomes more flexible.
+We start with a simple average of equally scaled Gaussian distributions. 
+Next let the bandwidth vary for each kernel, resulting in a 
+simple average of differently scaled Gaussian distributions.
+And finally, we allow each component to have a different weight and we 
+have a weighted average of differently scaled Gaussian distributions where
+their location parameter is also estimated from data.
+
+Finally, we shall note note that as the models become more flexible, 
+they also become more computationally demanding. 
+This aspect is important for an interactive exploratory data analysis or 
+modelling where you may need to generate hundreds of density 
+estimates to visualize resampled data.
+
+#### Example 
+
+We generated 8 random values from a Gaussian mixture and generated a
+density estimation with each of the three methods introduced. 
+In the first panel we see the classic Gaussian KDE, which poses 
+a Gaussian density on top of each value with a common standard deviation and
+scales them by $1 / n$, where $n$ is the number of data points.
+The second panel shows the adaptive version, which poses Gaussian densities
+with different standard deviations, but still weights equally.
+We can see the standard deviation decreases where the data is more concentrated
+and increases in more sparse regions. 
+Finally, the third panel shows a Gaussian mixture fitted by the EM algorithm.  
+Note the number of components does not necessarily match the number of points observed.
+Since all the parameters (means, standard deviations and weights) are fitted by 
+the EM algorithm, the Gaussian kernels are not necessarily placed on top 
+of any of the points and the areas below the gray curves are different.
+
+
+```{r kde_comparison, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.width=7, fig.height=3}
+set.seed(32111)
+
+rvs <- c(rnorm(5), rnorm(3, 0.9, 0.6))
+x_grid <- seq(-3, 4.2, length.out = 500)
+h <- 0.45
+
+# Gaussian KDE  
+out <- sapply(rvs, FUN = function(x) dnorm(x_grid, x, h))
+y <- apply(out, 1, mean)
+
+# Plot 1
+par(mfrow = c(1, 3))
+par(mar = c(1.5, 0.8, 2, 0.8), mgp = c(1.5, 0.5, 0))
+plot(1, type = "n", bty = "n", axes = FALSE, cex.main = 1.4,
+     xlim = c(-3, 3.3), ylim = c(0, 0.44), 
+     main = "Gaussian KDE") 
+
+abline(h = 0, lwd = 2)
+
+for (j in seq_along(rvs)) {
+  lines(x_grid, out[, j] / 8, lty = "dashed", lwd = 2, col = LIGHT_GRAY)
+}
+
+points(rvs, y = rep(0, length(rvs)), cex = 2, lwd = 2, pch = 21, bg = DARK_RED)
+lines(x_grid, y, col = LIGHT_BLUE, lwd = 4)
+
+# Adaptive KDE
+pdf_interp <- approx(x_grid, y, rvs)$y
+geom_mean <- exp(mean(log(pdf_interp)))
+adj_factor <- (geom_mean / pdf_interp) ** 0.5
+
+bw_adj = h * adj_factor
+
+out <- mapply(FUN = function(x, h) dnorm(x_grid, x, h), rvs, bw_adj)
+y <- apply(out, 1, mean)
+
+# Plot 2
+plot(1, type = "n", bty = "n", axes = FALSE, cex.main = 1.4,
+     xlim = c(-3, 3.3), ylim = c(0, 0.44),
+     main = "Adaptive Gaussian KDE")
+abline(h = 0, lwd = 2)
+for (j in seq_along(rvs)) {
+  lines(x_grid, out[, j] / 8, lty = "dashed", lwd = 2, col = LIGHT_GRAY)
+}
+points(rvs, y = rep(0, length(rvs)), cex = 2, lwd = 2, pch = 21, bg = DARK_RED)
+lines(x_grid, y, col = LIGHT_BLUE, lwd = 4)
+
+# EM KDE
+mu <- c(-1.4, 0, 2)
+sigma <- c(0.5, 0.38, 0.8)
+wt <- c(0.35, 0.4, 0.15)
+
+out <- mapply(FUN = function(mu, s) dnorm(x_grid, mu, s), mu, sigma)
+y <- out %*% wt
+
+# Plot 3
+plot(1, type = "n", bty = "n", axes = FALSE, cex.main = 1.4,
+     xlim = c(-3, 3.3), ylim = c(0, 0.44),
+     main = "Gaussian mixture via EM")
+abline(h = 0, lwd = 2)
+for (j in seq_along(mu)) {
+  lines(x_grid, out[, j] * wt[j], lty = "dashed", lwd = 2, col = LIGHT_GRAY)
+}
+points(rvs, y = rep(0, length(rvs)), cex = 2, lwd = 2, pch = 21, bg = DARK_RED)
+lines(x_grid, y, col = LIGHT_BLUE, lwd = 4)
+```
+
+### Bandwidth estimators
+
+A very popular measure of discrepancy between a density function and an estimate
+is the Integrated Squared Error
+
+$$
+\text{ISE}(\hat{f}(x)) = \int{[\hat{f}(x) - f(x)]^2}dx
+$$
+
+An easy way of thinking about it is as follows. We have two functions, one is
+the true density $f(x)$ and the other is our estimate of it $\hat{f}(x)$. 
+Then we subtract one from the other and square the result. 
+That gives us a function, which is always positive.
+Finally, we compute the area below that function. That is our measure of error.
+
+But the ISE only measures the performance of a single estimation. 
+In order to measure the performance of an estimator, we need to compute the 
+expected value of the ISE for a given estimator. 
+It is known as the Mean Integrated Squared Error
+
+$$
+\text{MISE}(\hat{f}(x)) = \mathbb{E}_f\int{[\hat{f}(x) - f(x)]^2}dx
+$$
+
+In the context of the classic Gaussian KDE, an asymptotic first-order approximation 
+for the MISE is given by
+
+$$
+\frac{1}{4} h^4 R(f'') + \frac{1}{2N\sqrt{\pi}h}
+$$
+
+where 
+
+$R(f'')  = \int{[f''(x)]^2 dx}$, which can be thought as a measure of the 
+wiggliness of the function $f$.
+
+It is possible to show the value of $h$ that minimizes the MISE asymptotically 
+(a.k.a. AMISE) is
+
+$$
+h_{\text{AMISE}} = \left(\frac{1}{2N\sqrt{\pi} R(f'')} \right)^{1 / 5}
+$$
+
+The computation of the optimal $h_{\text{AMISE}}$ in a Gaussian KDE requires 
+knowing $R(f'')$, which depends on the unknown function we want to estimate.
+
+#### Rules of thumb
+
+##### Scott's rule
+
+Scott introduces what he names the **normal reference rule**. 
+This is derved when you assume that the $f$ in $h_{\text{AMISE}}$ formula is 
+a Gaussian density function. Then, $R(f'') = 3/(8 \sqrt{\pi}\hat{\sigma}^{5})$ 
+and 
+
+$$
+h_{\text{Scott}} = \left(\frac{4\hat{\sigma}^5}{3N} \right)^{1/5} 
+\approx 1.058\hat{\sigma}N^{-0.2}
+$$
+
+where $\hat{\sigma}$ is the sample standard deviation.
+
+##### Silverman's rule
+
+Silverman proposed a modification to the Scott's rule in order to make it 
+more robust to differences between the true $f$ and a Gaussian density. 
+
+$$
+h_{\text{Silverman}} = 0.9AN^{-0.2}
+$$
+
+where $A = \min\{\hat{\sigma}, \frac{R}{1.34}\}$ and $R$ is the interquartile range.
+
+#### Plug-in methods
+
+The plug-in approach consists of replacing the unknown quantity $R(f'')$ in the
+$h_{\text{AMISE}}$ expression with an estimate.
+The difference between this method and the rule of thumb is that the rule of 
+thumb imposes a distribution from a parametric family, 
+while this approach estimates $R(f'')$ from the data using a non-parametric approach.
+Estimating $R(f'')$ by $R(\hat{f}_g'')$ requires to choose a bandwidth $g$ for the
+so called pilot estimate, which can be done in many ways.
+
+The two methods included here are only briefly introduced because of their
+mathematical complexity. For a better description of both you can consult 
+[this notebook](http://localhost:8888/notebooks/Desktop/estimacion_densidad/notebooks/03_more_bandwidth_selectors.ipynb) 
+and the original papers referenced in there. 
+
+##### Sheather-Jones method
+<!-- No estoy muy seguro sobre eso que puse, ni de que tan claro esta. -->
+While this method does not assume that $f$ is a Gaussian density in order
+to incorporate that into a rule of thumb, it does assume it when 
+it calculates the bandwidth of estimations of derivatives of $f$ that
+are required to get the final bandwidth.
+
+Even though we do not give further details of the method here, 
+we do note the method is considerably slower than normal reference rules
+because it involves computing all pairwise differences between
+the data points and a root finding problem solved by a numerical method.
+
+##### Improved Sheather-Jones method
+
+The Improved Sheather-Jones method is presented in Botev et. al. (2011). 
+The author claims it is "*genuinely non-parametric and completely data-driven*". 
+Unlike Sheather and Jones, they do not make any normality assumptions 
+in any of the estimation stages.
+
+An important characteristic of this algorithm, as stated by the authors,
+is that it is not significantly slower than a normal reference rule. 
+Similar to the Sheather-Jones method, this one implies a root finding problem.
+However, it is much faster because the computation and memory demand are much lighter.
+
+#### Hybrid
+
+After performing many small simulations and tests with the different 
+bandwidth estimation methods under different circumstances, we thought
+we could try to modify the existing alternatives or constructing new ones
+and evaluate if we found any improvement.
+Since the construction is derived from our empirical work and not
+a well defined theoretical basis, we decided to call it the **experimental method**.
+
+##### Experimental method
+
+We noticed the Improved Sheather-Jones did a good work at capturing the 
+general shape of the density function $f$ when it contains multiple modes with 
+different spreads. However, it does it at the cost of excessive noise (under smoothing).
+In addition, it is theoretically known that normal reference rules 
+(either Scott's or Silverman's) tend to oversmooth in these cases.
+
+Consequently, this experimental method consists of just estimating the bandwidth
+via both the Silverman's rule and the Improved Sheather-Jones method and 
+average them^[In this case both bandwidth estimations receive the same weight. 
+In the future we could try with a weighted average].
+
+### Selected target probability density functions
+
+The selected probability density funcitons are the result of a compromise between
+our desire to simulate from different probability density functions 
+while keeping the final number as low as possible. 
+
+We think that the 11 probability density functions selected cover a wide range
+of cases that can occur in practice. 
+
+**Unimodal distributions:**
+
+1. $N(0, 1)$
+2. $N(0, 2)$
+3. $\frac{2}{3}N(0, 1) + \frac{1}{3}N(0, \frac{1}{10})$
+
+**1.** and **2.** are taken as a baseline. 
+Any acceptable method should have a good performance when estimating Gaussians.
+We included different spreads to evaluate if it impacts the result. 
+**3.** is a distribution where the density around is mode is much more 
+concentrated than in the rest of the support.
+
+**Bimodal distributions:**
+
+4. $\frac{1}{2}N(-12, \frac{1}{2}) + \frac{1}{2}N(12, \frac{1}{2})$
+5. $\frac{1}{2}N(0, \frac{1}{10}) + \frac{1}{2}N(5, 1)$
+6. $\frac{3}{4}N(0, 1) + \frac{1}{4}N(1.5, \frac{1}{3})$
+7. $\frac{3}{5}N(3.5, \frac{1}{2}) + \frac{2}{5}N(9, 1.5)$
+
+**4.** is a multimodal distribution with two modes that have the same spread and are 
+very well separated. The rest are differente cases of two modes with different
+spread and seperation.
+
+**Skewed distributions:**
+
+8. $\Gamma(k = 1, \theta = 1)$
+9. $\Gamma(k = 2, \theta = 1)$
+10. $Log N(0, 1)$
+11. $\beta(a = 2.5, b = 1.5)$
+12. $\frac{7}{10}\Gamma(k = 1.5, \theta = 1) + \frac{2}{10}N(5, 1) + \frac{1}{10}N(8, \frac{3}{4})$
+
+**8.**, **9.** and **10.** are cases of right-skewed distributions with different 
+degrees of skewness. **9.** and **10.** may appear similar, but the lognormal 
+density concentrates more density around its mode and the curve
+decreases abruptly on the left side, which ruins many estimation methods [FIX].
+We also have the Beta distribution **11.** which is left-skewed and bounded
+on both sides. Finally, the last distribution is a $\Gamma(k = 1.5, \theta = 1)$
+with two bumps in its tail.
+
+```{r target_densities, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(4, 3), mar = c(2.3, 3, 1.4, .2), mgp=c(1.3, 0.5, 0))
+for (nm in names(dists)) get_plot(nm)
+```
+
+## Metrics evaluated
+
+## More info
+
+## Time {.tabset}
+### Gaussian KDE {.tabset}
+#### Scott's rule
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Scott's_rule.png")
+```
+
+#### Silverman's rule
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Silverman's_rule.png")
+```
+
+#### Sheather-Jones
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Sheather-Jones.png")
+```
+
+#### Improved Sheather-Jones
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Improved_Sheather-Jones_1.png")
+```
+
+**10% trim:**
+
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Improved_Sheather-Jones_2.png")
+```
+
+#### Experimental
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Experimental_1.png")
+```
+
+**10% trim:**
+
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Experimental_2.png")
+```
+
+
+### Adaptive Gaussian KDE {.tabset}
+
+#### Scotts's rule
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Scott's_rule.png")
+```
+
+#### Silverman's rule
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Silverman's_rule.png")
+```
+
+#### Sheather-Jones
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Sheather-Jones.png")
+```
+
+#### Improved Sheather-Jones
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Improved_Sheather-Jones_1.png")
+```
+
+**10% trim:**
+
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Improved_Sheather-Jones_2.png")
+```
+
+#### Experimental
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Experimental_1.png")
+```
+
+**10% trim:**
+
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Experimental_2.png")
+```
+
+### Adaptive Gaussian KDE via EM {.tabset}
+#### Custom
+
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_via_EM.png")
+```
+
+## Error {.tabset}
+
+### Scotts's rule {.tabset}
+```{r}
+knitr::include_graphics("imgs/boxplots/error/Scott's_rule.png")
+```
+
+### Silverman's rule {.tabset}
+```{r}
+knitr::include_graphics("imgs/boxplots/error/Silverman's_rule.png")
+```
+
+### Sheather-Jones {.tabset}
+```{r}
+knitr::include_graphics("imgs/boxplots/error/Sheather-Jones.png")
+```
+
+### Improved Sheather-Jones {.tabset}
+```{r}
+knitr::include_graphics("imgs/boxplots/error/Improved_Sheather-Jones.png")
+```
+
+### Experimental {.tabset}
+```{r}
+knitr::include_graphics("imgs/boxplots/error/Experimental.png")
+```
+
+## Examples
+
+#### Distribution 4: <font size="2"> $\frac{1}{2} N(0, \frac{1}{10}) + \frac{1}{2} N(5, 1)$ </font> {.tabset}
+##### ISJ
+```{r example_4, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.width=6, fig.height=4, out.width = "70%"}
+get_example(name = "gmixture_3", bw = "isj", size = 5000)
+```
+
+##### Experimental
+```{r, dev = "tikz", fig.process = pdf2png, fig.width=6, fig.height=4, out.width = "70%"}
+get_example(name = "gmixture_3", bw = "experimental", size = 5000)
+```
+
+## Some examples
+
+Aca quiero poner algunos ejemplos de distribuciones y su estimacion segun diferentes metodos.
+Tal vez con 10/20 replicas. 
+El concepto que quiero transmitir es que no solo tenemos que mirar al ISE, sino tambien 
+
+# Time
+
+### Fixed Gaussian
+
+The computation times are not related to the density that is being estimated. The comments/conclusions presented apply to each method in general.
+
+The best times are observed when the bandwidth is estimated via Scott's or Silverman's rule. Their computational times are identical, irrespectively of sample size. The mean computation time ranges from 0.7ms when $n=200$ to 1.1ms when $n=10000$.
+
+Both Scott's and Silverman's rules have identical computational times because they perform the same amount of operations (they just differ in a multiplicative constant).
+
+The Improved Sheather-Jones is between 6 and 7 times slower than the rules of thumb, but its demand is constant across the different sample sizes. Consequently, for a sample size of 10000 it is ~ 3.5 times slower than Scott's and Silverman's rule.
+
+The experimental bandwidth, which requires computing both a rule of thumb and the improved Sheather-Jones bandwidths, has a time demand approximately equal to the sum of both. It does not imply a substantial overhead compared to ISJ.
+
+The Sheather-Jones method is not suitable for a fast and practical usage. Even with a size of 1000 the method takes more than 2 seconds on average. 
+
+### Adaptive Gaussian
+
+The adaptive estimator is between 1.5 and 3.5 times slower than the Fixed Gaussian KDE (see any of the Gaussian/Gaussian mixtures heatmaps).
+
+If we consider the heatmaps related to the Gamma, Beta and LogNormal distributions we will see computational times multiplied between 15 and 50 times. The increase is not only due to the adaptivity. It also represents the overhead induced by the boundary reflection method. 
+
+Whe the boundary correction is applied with a fixed Gaussian KDE via convolution, this does not induce a substantial overhead. But when it is applied with an adaptive KDE, the overhead is important because you cannot use a fast method to perform the calculatons.
+
+----------------------------------------
+
+Idea: The estimated computation times could be used to flag users, or at least to be included in documentation.
+
+The ISJ method could be further improved. Within the method you compute a relative frequency per bin. These could be re-utilized in the FFT. Currently they are being computed twice. What's more, other things (like minimum, maximum, SDs, etc) are being computed twice.
+
+
+<!-- RANDOM NOTES -->
+
+<!-- The most popular and most widely used estimaton method is the Gaussian Kernel Density Estimator, a type of the broader class of kernel density estimators. In order to use the Gaussian KDE, you have to specify the value of a parameter called bandwidth which controls the smoothness of the estimated function. Usually it is automatically calculated following a rule of thumb that minimizes a measure of the estimation error when the distribution underlying our data is Gaussian. -->

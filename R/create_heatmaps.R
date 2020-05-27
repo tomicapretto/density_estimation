@@ -18,6 +18,7 @@ right_trimmed_mean <- function(x, p) {
 }
 
 data_summary <- data_all %>%
+  filter(size != 2000) %>% # drop n =2000, only for SJ
   group_by(
     pdf, estimator, bw, size
   ) %>%
@@ -33,11 +34,13 @@ data_summary <- data_all %>%
   ) %>%
   ungroup() %>%
   group_by(
-    pdf
+    pdf, size
   ) %>%
   mutate(
     time_mean_as_prop = round(time_mean / min(time_mean), 2),
-    error_mean_as_prop = round(error_mean / min(error_mean), 2) 
+    error_mean_as_prop = round(error_mean / min(error_mean), 2),
+    time_fill = (time_mean - min(time_mean)) / (max(time_mean) - min(time_mean)),
+    error_fill = (error_mean - min(error_mean)) / (max(error_mean) - min(error_mean))
   ) %>%
   ungroup() %>%
   mutate(
@@ -63,6 +66,7 @@ data_summary_time <- data_summary %>%
     bw,
     size,
     time_mean,
+    time_fill,
     time_text
   )
 
@@ -73,6 +77,7 @@ data_summary_error <- data_summary %>%
     bw,
     size,
     error_mean,
+    error_fill,
     error_text
   )
 
@@ -113,7 +118,7 @@ heatmap <- function(df, x, y, fill, label, facet, title) {
       space = "free", 
       scale = "free"
     ) + 
-    scale_fill_viridis_c() +
+    scale_fill_viridis_c(begin = 0.05, end = 0.95) +
     theme_minimal() + 
     theme(
       panel.grid.major = element_blank(),
@@ -127,15 +132,16 @@ heatmap <- function(df, x, y, fill, label, facet, title) {
 pdf_list <- list(
   "gaussian_1" = "N(0, 1)",
   "gaussian_2" = "N(0, 2)",
-  "gmixture_1" = "0.5 N(-12, 0.5) + 0.5 N(12, 0.5)",
-  "gmixture_2" = "0.5 N(0, 0.1) + 0.5 N(5, 1)",
-  "gmixture_3" = "0.67 N(0, 1) + 0.33 N(0, 0.1)",
+  "gmixture_1" = "0.67 N(0, 1) + 0.33 N(0, 0.1)",
+  "gmixture_2" = "0.5 N(-12, 0.5) + 0.5 N(12, 0.5)",
+  "gmixture_3" = "0.5 N(0, 0.1) + 0.5 N(5, 1)",
   "gmixture_4" = "0.75 N(0, 1) + 0.25 N(1.5, 0.33)",
   "gmixture_5" = "0.6 N(3.5, 0.5) + 0.4 N(9, 1.5)",
   "gamma_1" = "Ga(k=1, theta=1)",
   "gamma_2" = "Ga(k=2, theta=1)",
+  "logn_1" = "LogN(0, 1)",
   "beta_1" = "Beta(a=2.5, b=1.5)",
-  "logn_1" = "LogN(0, 1)"
+  "skwd_mixture1" = "0.7Ga(1.5, 1.0) + 0.2N(5,1) + 0.1N(8, 0.75)"
 )
 
 get_time_heatmaps <- function(df, pdf_names = pdf_names, exclude_sj = TRUE) {
@@ -145,7 +151,7 @@ get_time_heatmaps <- function(df, pdf_names = pdf_names, exclude_sj = TRUE) {
     .df <- filter(df, pdf == pdf_name)
     if (exclude_sj) .df <- filter(.df, bw != "SJ")
     .title <- pdf_list[[pdf_name]]
-    plt_list[[pdf_name]] <- heatmap(.df, bw, size, time_mean, 
+    plt_list[[pdf_name]] <- heatmap(.df, bw, size, time_fill, 
                                     time_text, estimator, .title)
   }
   plt_list
@@ -158,7 +164,7 @@ get_error_heatmaps <- function(df, pdf_names = pdf_names, exclude_sj = TRUE) {
     .df <- filter(df, pdf == pdf_name)
     if (exclude_sj) .df <- filter(.df, bw != "SJ")
     .title <- pdf_list[[pdf_name]]
-    plt_list[[pdf_name]] <- heatmap(.df, bw, size, error_mean, 
+    plt_list[[pdf_name]] <- heatmap(.df, bw, size, error_fill, 
                                     error_text, estimator, .title)
   }
   plt_list
@@ -216,3 +222,9 @@ purrr::pwalk(
 # new_folder <- "app/data/heatmaps"
 # files_to_copy <- list.files(current_folder)
 # file.copy(file.path(current_folder, files_to_copy), new_folder, overwrite = TRUE)
+
+# TODO: De alguna forma incorporar la razon entre tiempos para el mismo tamaño muestral,
+#       pero no eliminar la razon actual... o buscarle la vuelta para que se puedan hacer
+#       las siguientes comparaciones de manera directa:
+#       * Tiempo para tamaño X / Tiemmpo para tamaño mas bajo, dado un método de estimacion
+#       * Tiempo para tamaño X, metodo 1 / Tiempo para tamaño X, metodo 2.

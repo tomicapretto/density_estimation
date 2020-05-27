@@ -1,0 +1,36 @@
+Distribucione elegidas:
+* N(0, 1)
+* 0.5 * N(0, 0.1) + 0.5 * N(5, 1)
+* LogN(0, 1)
+* Be(2.5, 1.5)
+
+Trim percents used for plots
+
+Explicar porque decido usar estas 4 distribuciones de referencia.
+Tambien explicar que pueden usar la app para comparar los resultados
+para cualquira de las otras distribuciones.
+Mostrar las densidades teoricas de lsa distribuciones elegidas.
+
+# Time
+## Gaussian KDE
+All trimmed 2.5%
+
+## Adaptive Gaussian KDE
+All trimmed 2.5%
+Me parece mejor dejar los outliers, y que si la persona quiere
+ver la diferencia fina entre los valores medios se vaya al 
+heatmap o produzca su propio grafico.
+
+## Gaussian mixture via EM
+Tomo un approach similar al de el Adaptive Gaussian KDE.
+Dejo el grafico como viene, por defecto con 2.5% de trim.
+Luego comento las diferencias, y si quieren ver algo mas 
+especificos los incentivo a crear el mismo grafico eliminanto
+a la distribucion beta, o con otro trim, etc.
+
+
+# Error
+Todos 2.5% excepto
+
+Improved Sheather Jones (2) que tenia outliers groseros en n =200 adaptive gaussian kde para logN(0, 1). Se uso 5%.
+

@@ -50,39 +50,24 @@ observeEvent(input$boxplots_plot_btn, {
     store$df_filtered <- df_facet_order(store$df_filtered, input)
     
     # Trim
-    group_vars <- c("estimator", "bw", "size")
+    group_vars <- c("pdf", "estimator", "bw", "size")
     quantile <- (100 - input$boxplots_trim_pct) / 100
     args <- list(store$df_filtered, group_vars, isolate(input$boxplots_metric), quantile)
     store$df_trimmed <- do.call(df_trim, args)
     
-    # Deduce scale
-    scale <- if (input$boxplots_metric == "time") {
-      deduce_scale(store$df_trimmed[[isolate(input$boxplots_metric)]])
-    } else {
-      ""
-    }
-    
-    # Get accuracy
-    # TODO: Improve this pls! Not always working nice.y
-    if (scale == "ms") {
-      acc_var <- store$df_trimmed[[input$boxplots_metric]] * 100
-    } else if (scale == "sec") {
-      acc_var <- store$df_trimmed[[input$boxplots_metric]]
-    } else {
-      acc_var <- store$df_trimmed[[input$boxplots_metric]] / 10
-    }
-    
-    acc <- precision(acc_var)
+    # Get precision for scaling
+    prec <- precision(store$df_trimmed[[input$boxplots_metric]])
+    time_flag <- if (input$boxplots_metric == "time") TRUE else FALSE
     
     # Plot it!
     store$boxplots_plot <- initialize_plot(
       store$df_trimmed, 
       isolate(input$boxplots_metric)
-    ) +
+      ) +
       add_boxplot() +
       custom_fill() +
       custom_theme() +
-      custom_scale(scale = scale, acc = acc, log10 = isolate(input$boxplots_log10)) +
+      custom_scale(log10 = isolate(input$boxplots_log10), prec = prec, time_flag = time_flag) +
       custom_facet(isolate(input$boxplots_facet_vars), free_y = isolate(input$boxplots_free_y)) + 
       labs(x = "Size", y = stringr::str_to_sentence(isolate(input$boxplots_metric)))
     
@@ -95,7 +80,6 @@ observeEvent(input$boxplots_plot_btn, {
 
 # Add title to plot
 observeEvent(input$boxplots_plot_title_btn, {
-  # or nchar(ttl) == 0
   if (trimws(input$boxplots_plot_title) == "") {
     ttl <- NULL
   } else {
@@ -151,7 +135,7 @@ observeEvent(input$boxplots_plot_btn, {
   output$boxplots_plot_UI <- renderUI({
     req(input$boxplots_plot_height)
     plotOutput(
-      outputId = "boxplots_plot", 
+      outputId = "boxplots_plot",
       height = paste0(input$boxplots_plot_height, "px"),
       width = paste0(input$boxplots_plot_width, "%")
     )

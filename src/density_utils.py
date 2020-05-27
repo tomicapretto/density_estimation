@@ -5,9 +5,6 @@ Auxiliary functions to compute kernel density estimates
 from warnings import warn
 import numpy as np
 
-# Own
-from .bandwidth import bw_scott, bw_silverman, bw_lscv, bw_sj, bw_isj, bw_experimental
-
 def check_type(x):
     """
     Checks the input is of the correct type.
@@ -31,14 +28,15 @@ def check_type(x):
             f"Can't produce a density estimator for {type(x)}.\n"
             f"Please input a numeric list or numpy array."
         ))
-    else:
-        any_bool = any(isinstance(x_i, (bool, np.bool_)) for x_i in x)
-        if any_bool:
-            raise ValueError((
-                f"At least one element in `x` is boolean.\n"
-                f"Can't produce a density estimator for booleans.\n"
-                f"Please input a numeric list or numpy array."
-            ))
+    #else:
+        # SUPPRESSED THIS BECAUSE IT CONSUMES A LOT OF TIME.
+        # any_bool = any(isinstance(x_i, (bool, np.bool_)) for x_i in x)
+        # if any_bool:
+        #    raise ValueError((
+        #        f"At least one element in `x` is boolean.\n"
+        #        f"Can't produce a density estimator for booleans.\n"
+        #        f"Please input a numeric list or numpy array."
+        #    ))
         
     # Will raise an error if `x` can't be casted to numeric
     x = np.asfarray(x)
@@ -51,7 +49,7 @@ def check_type(x):
         
     return x
     
-def check_custom_lims(custom_lims):
+def check_custom_lims(custom_lims, x_min, x_max):
     """
     Checks whether `custom_lims` are of the correct type.
     It accepts numeric lists/tuples of length 2.
@@ -71,23 +69,31 @@ def check_custom_lims(custom_lims):
             f"Not an object of {type(custom_lims)}."
         ))
         
-    any_bool = any(isinstance(i, bool) for i in custom_lims)
-    if any_bool:
-        raise TypeError("Elements of `custom_lims` must be numeric, not bool")
-        
-    all_numeric = all(isinstance(i, (int, float)) for i in custom_lims)
-    if not all_numeric:
-        raise TypeError((
-            f"Elements of `custom_lims` must be numeric.\n"
-            f"At least one of them is not."
-        ))
-        
     if len(custom_lims) != 2:
         raise AttributeError(f"`len(custom_lims)` must be 2, not {len(custom_lims)}.")
+        
+    any_bool = any(isinstance(i, bool) for i in custom_lims)
+    if any_bool:
+        raise TypeError("Elements of `custom_lims` must be numeric or None, not bool.")
+    
+    if custom_lims[0] is None:
+        custom_lims[0] = x_min
+        
+    if custom_lims[1] is None:
+        custom_lims[1] = x_max
+    
+    types = (int, float, np.integer, np.float)    
+    all_numeric = all(isinstance(i, types) for i in custom_lims)
+    if not all_numeric:
+        raise TypeError((
+            f"Elements of `custom_lims` must be numeric or None.\n"
+            f"At least one of them is not."
+        ))
     
     if not custom_lims[0] < custom_lims[1]:
         raise AttributeError(f"`custom_lims[0]` must be smaller than `custom_lims[1]`.")
-
+    
+    return custom_lims
 
 def len_warning(x):
     """
@@ -139,8 +145,8 @@ def get_grid(
         Default is True.
     bound_correction: bool, optional
         Whether the density estimations performs boundary correction or not.
-        This does not impacts in the directly in the output, but is used
-        to override extend.
+        This does not impacts directly in the output, but is used
+        to override `extend`.
         Default is False.
         
     Returns
@@ -166,7 +172,7 @@ def get_grid(
     # `custom_lims` overrides `extend`
     # `bound_correction` overrides `extend`
     if custom_lims is not None:
-        check_custom_lims(custom_lims)
+        custom_lims = check_custom_lims(custom_lims, x_min, x_max)
         grid_min = custom_lims[0]
         grid_max = custom_lims[1]
     elif extend and not bound_correction:
@@ -176,85 +182,9 @@ def get_grid(
     else:
         grid_min = x_min
         grid_max = x_max
-    return grid_len, grid_min, grid_max
+    return grid_min, grid_max, grid_len
 
-
-def get_bw(x, bw):
-    """
-    Computes bandwidth for a given data `x` and `bw`.
-    Also checks `bw` is correctly specified.
-    
-    Parameters
-    ----------
-    x : 1-D numpy array
-        1 dimensional array of sample data from the 
-        variable for which a density estimate is desired.
-    bw: int, float or str
-        If numeric, indicates the bandwidth and must be positive.
-        If str, indicates the method to estimate the bandwidth.
-    
-    Returns
-    -------
-    bw: float
-        Bandwidth
-    """
-    if isinstance(bw, bool):
-        raise ValueError((
-            f"`bw` must not be of type `bool`.\n"
-            f"Expected a positive numeric or one of the following strings:\n"
-            f"{list(BW_METHODS.keys())}."))
-    
-    if isinstance(bw, (int, float)):
-        if bw < 0:
-            raise ValueError(f"Numeric `bw` must be positive.\nInput: {bw:.4f}.")
-
-    elif isinstance(bw, str):
-        bw_fun = select_bw_method(bw)
-        bw = bw_fun(x)
-    else:
-        raise ValueError((
-            f"Unrecognized `bw` argument.\n"
-            f"Expected a positive numeric or one of the following strings:\n"
-            f"{list(BW_METHODS.keys())}."))
-    return bw
-
-BW_METHODS = {
-    "scott": bw_scott,
-    "silverman": bw_silverman,
-    "lscv": bw_lscv,
-    "sj": bw_sj,
-    "isj": bw_isj,
-    "experimental": bw_experimental,
-}
-
-def select_bw_method(method="isj"):
-    """
-    Selects a function to compute the bandwidth.
-    Also checks method `bw` is correctly specified.
-    Otherwise, throws an error.
-    
-    Parameters
-    ----------
-    method : str
-        Method to estimate the bandwidth.
-    
-    Returns
-    -------
-    bw_fun: function
-        Function to compute the bandwidth.
-    """
-    method_lower = method.lower()
-
-    if method_lower not in BW_METHODS.keys():
-        raise ValueError((
-            f"Unrecognized bandwidth method.\n"
-            f"Input is: {method}.\n"
-            f"Expected one of: {list(BW_METHODS.keys())}."
-        ))
-    bw_fun = BW_METHODS[method_lower]
-    return bw_fun
-
-def get_mixture(grid, mu, var, weight):
+def gaussian_mixture(grid, mu, var, weight):
     """
     Computes the probability density function of a 
     mixture of Gaussian distributions.
@@ -285,7 +215,7 @@ def get_mixture(grid, mu, var, weight):
 
 def norm_pdf(grid, mu, var):
     """
-    A helper function of `get_mixture`. 
+    A helper function of `gaussian_mixture`. 
     Computes the probability density function of a Gaussian distribution.
     
     Length of mu, var and weight must be the same.

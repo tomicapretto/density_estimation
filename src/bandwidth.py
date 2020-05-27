@@ -7,32 +7,53 @@ from scipy import stats
 from scipy.fftpack import fft, ifft
 from scipy.optimize import minimize, fsolve
 from scipy.integrate import quad
+from fast_histogram import histogram1d
+from warnings import warn
 
 # Own
 # Circular dependcy... how to avoid?
 import src.density as own
 
-__all__ = ["bw_scott", "bw_silverman", "bw_lscv", "bw_sj", "bw_isj", "bw_experimental"]
+# __all__ = ["bw_scott", "bw_silverman", "bw_lscv", "bw_sj", "bw_isj", "bw_experimental"]
 
+# Scott's rule of thumb --------------------------------------------------------
+def bw_scott(x, x_std=None):
+    """
+    Scott's Rule
+    """
+    if x_std is None:
+        x_std = np.std(x)
+    return _bw_scott(x, x_std)
 
-def bw_scott(x):
+def _bw_scott(x, x_std):
     """
-    Scott Rule
+    Scott's Rule. 
+    Internal function.
     """
-    a = min(np.std(x), stats.iqr(x) / 1.34)
-    bw = 1.06 * a * len(x) ** (-0.2)
+    bw = 1.06 * x_std * len(x) ** (-0.2)
     return bw
 
+# Silverman's rule of thumb ----------------------------------------------------
+def bw_silverman(x, x_std=None):
+    """
+    Silverman's Rule.
+    """
+    if x_std is None:
+        x_std = np.std(x)
+    return _bw_silverman(x, x_std)
 
-def bw_silverman(x):
+def _bw_silverman(x, x_std):
     """
-    Silverman Rule
+    Silverman's Rule.
+    Internal function.
     """
-    a = min(np.std(x), stats.iqr(x) / 1.34)
+    q75, q25 = np.percentile(x, [75 ,25])
+    x_iqr = q75 - q25
+    a = min(x_std, x_iqr / 1.34)
     bw = 0.9 * a * len(x) ** (-0.2)
     return bw
 
-
+# Least Squares Cross-Validation -----------------------------------------------
 def bw_lscv(x):
     """
     Computes Least Squares Cross-Validation bandwidth for a Gaussian KDE
@@ -64,7 +85,6 @@ def bw_lscv(x):
     h = result.x[0]
 
     return h
-
 
 def _gaussian_pdf(x):
     """
@@ -121,6 +141,7 @@ def _get_ise_loocv(h, x, x_min, x_max):
 
     return lscv_error
 
+# Sheather-Jones plug-in method ------------------------------------------------
 def bw_sj(x):
     """
     Computes Sheather-Jones bandwidth for Gaussian KDE 
@@ -145,23 +166,18 @@ def bw_sj(x):
     """
 
     x_len = len(x)
-    x_std = np.std(x)
-    x_iqr = stats.iqr(x)
+    x_std = (((x ** 2).sum() / x_len) - (x.sum() / x_len) ** 2) ** 0.5
+    q75, q25 = np.percentile(x, [75 ,25])
+    x_iqr = q75 - q25
     h0 = 0.9 * x_std * x_len ** (-0.2)
 
     a = 0.92 * x_iqr * x_len ** (-1 / 7)
     b = 0.912 * x_iqr * x_len ** (-1 / 9)
 
     x_len_mult = 1 / (x_len * (x_len - 1))
-    vectorized = True if x_len <= 1000 else False    
     
-    if vectorized:
-        x_pairwise_diff = x - x[:, None]
-        s_a, t_b = _sj_constants(x_pairwise_diff, _phi6, _phi4, b, a, x_len_mult)
-        result = fsolve(_sj_optim_fun, h0, args=(s_a, t_b, x_pairwise_diff, x_len, x_len_mult))
-    else:
-        s_a, t_b = _sj_constants(x, _phi6, _phi4, b, a, x_len_mult)
-        result = fsolve(_sj_optim_fun, h0, args=(s_a, t_b, x, x_len, x_len_mult))
+    s_a, t_b = _sj_constants(x, _phi6, _phi4, b, a, x_len_mult)
+    result = fsolve(_sj_optim_fun, h0, args=(s_a, t_b, x, x_len, x_len_mult))
         
     return result[0]
     
@@ -176,6 +192,16 @@ def _phi4(x):
     Computes the 4th derivative of a standard Gaussian density function
     """
     return (x ** 4 - 6 * x ** 2 + 3) * _gaussian_pdf(x)
+
+def pairwise_diff(x):
+    x_len = len(x)
+    diff_len = x_len * (x_len - 1) // 2
+    idx = np.concatenate(([0], np.arange(x_len - 1, 0, -1).cumsum()))
+    start, stop = idx[:-1], idx[1:]
+    diff = np.empty(diff_len, dtype=x.dtype)
+    for j, i in enumerate(range(x_len - 1)):
+        diff[start[j]:stop[j]] = x[i, None] - x[i + 1:]
+    return diff
 
 def _sj_double_sum(x, fun, den):
     """
@@ -209,12 +235,11 @@ def _sj_double_sum(x, fun, den):
           Value of the double sum.
     """
     
-    if x.ndim == 2:
-        out = np.sum(np.sum(fun(x / den), 0))
-    else:
-        out = 0
-        for x_i in x:
-            out += np.sum(fun((x_i - x) / den))
+    # Exploits the fact that _phi4 and _phi6 are symmetric and 
+    # the diagonal of the difference matrix is 0
+    diff = pairwise_diff(x)
+    diff /= den
+    out = (fun(diff)).sum() * 2 + (fun(0) * len(x)).sum()
     return out
 
 def _sj_constants(x, f1, f2, c1, c2, mult):
@@ -248,10 +273,19 @@ def _sj_optim_fun(h, s_a, t_b, x, x_len, x_len_mult):  # pylint: disable=too-man
 
     return output
 
-
-def bw_isj(x):  # pylint: disable= too-many-locals
+# Improved Sheather-Jones plug-in method ---------------------------------------
+def bw_isj(x):
+    """
+    Improved Sheather Jones method for interactive usage
+    """
+    return _bw_isj(x, grid_counts=None, x_range=None)
+    
+def _bw_isj(x, grid_counts=None, x_range=None):
     """
     Improved Sheather and Jones method as explained in [1]
+    This is an internal version pretended to be used by the KDE estimator.
+    When used internally computation time is saved because 
+    things like minimums, maximums and the grid are pre-computed.
     
     References
     ----------
@@ -261,30 +295,32 @@ def bw_isj(x):  # pylint: disable= too-many-locals
     """
 
     x_len = len(x)
-    x_min = np.min(x)
-    x_max = np.max(x)
-    x_range = x_max - x_min
-    x_std = np.std(x)
-
-    grid_len = 256
-    grid_min = x_min - 0.5 * x_std
-    grid_max = x_max + 0.5 * x_std
+    if x_range is None:
+        x_min = np.min(x)
+        x_max = np.max(x)
+        x_range = x_max - x_min        
 
     # Relative frequency per bin
-    f, _ = np.histogram(x, bins=grid_len, range=(grid_min, grid_max))
-    f = f / x_len
+    if grid_counts is None:
+        x_std = np.std(x)
+        grid_len = 256
+        grid_min = x_min - 0.5 * x_std
+        grid_max = x_max + 0.5 * x_std
+        grid_counts = histogram1d(x, bins=grid_len, range=(grid_min, grid_max)) 
+    else:
+        grid_len = len(grid_counts) - 1
+        
+    grid_relfreq = grid_counts / x_len
 
     # Discrete cosine transform of the data
-    a_k = _dct1d(f)
+    a_k = _dct1d(grid_relfreq)
 
     k_sq = np.arange(1, grid_len) ** 2
     a_sq = a_k[range(1, grid_len)] ** 2
-
-    t = fsolve(_fixed_point, 0.02, args=(x_len, k_sq, a_sq))
-    h = t[0] ** 0.5 * x_range
-
+    
+    t = _root(_fixed_point, 0.02, args=(x_len, k_sq, a_sq), x=x)
+    h = t ** 0.5 * x_range
     return h
-
 
 def _dct1d(x):
     """
@@ -313,7 +349,6 @@ def _dct1d(x):
 
     return output
 
-
 def _fixed_point(t, N, k_sq, a_sq):
     """
     Implementation of the function t-zeta*gamma^[l](t) derived
@@ -325,53 +360,133 @@ def _fixed_point(t, N, k_sq, a_sq):
        Z. I. Botev, J. F. Grotowski, and D. P. Kroese.
        Ann. Statist. 38 (2010), no. 5, 2916--2957.
     """
-    # To avoid prevent powers from overflowing.
+    # To prevent powers from overflowing. But sometimes it still fails!
     k_sq = np.asfarray(k_sq, dtype="float")
     a_sq = np.asfarray(a_sq, dtype="float")
 
     l = 7
-    f = 0.5 * np.pi ** (2.0 * l) * np.sum(k_sq ** l * a_sq * np.exp(-k_sq * np.pi ** 2.0 * t))
+    f = 0.5 * np.pi ** (2.0 * l) * np.sum(k_sq ** l * a_sq * np.exp(-k_sq * np.pi ** 2 * t))
 
     for j in reversed(range(2, l)):
-        c1 = (1 + 0.5 ** (j + 0.5)) / 3.0
-        c2 = np.product(np.arange(1.0, 2.0 * j + 1.0, 2.0, dtype="float")) / (np.pi / 2) ** 0.5
+        c1 = (1 + 0.5 ** (j + 0.5)) / 3
+        c2 = np.product(np.arange(1.0, 2 * j + 1, 2, dtype="float")) / (np.pi / 2) ** 0.5
         t_j = np.power((c1 * c2 / (N * f)), (2 / (3 + 2 * j)))
-        f = 0.5 * np.pi ** (2.0 * j) * np.sum(k_sq ** j * a_sq * np.exp(-k_sq * np.pi ** 2.0 * t_j))
+        f = 0.5 * np.pi ** (2 * j) * np.sum(k_sq ** j * a_sq * np.exp(-k_sq * np.pi ** 2.0 * t_j))
 
-    out = np.abs(t - (2.0 * N * np.pi ** 0.5 * f) ** (-0.4))
+    out = t - (2 * N * np.pi ** 0.5 * f) ** (-0.4)
     return out
 
-
-# unsed function?
-def _idct1d(x):
-    """
-    Inverse Discrete Cosine Transform in 1 dimension
-
-    Parameters
-    ----------
-    x : numpy array
-        1 dimensional array of values for which the
-        IDCT is desired
-
-    Returns
-    -------
-    output : IDCT transformed values
-    """
-
-    x_len = len(x)
-
-    w_2k = x * np.exp((0 + 1j) * np.arange(0, x_len) * np.pi / (2 * x_len))
-    x = np.real(ifft(w_2k))
-
-    output = np.zeros(x_len)
-    output[np.arange(0, x_len, 2, dtype=int)] = x[np.arange(0, x_len / 2, dtype=int)]
-    output[np.arange(1, x_len, 2, dtype=int)] = x[np.arange(x_len - 1, (x_len / 2) - 1, -1, dtype=int)]
-
-    return output
+def _root(function, x0, args, x):
+    
+    tol = 1.49012e-08 # default fsolve tolerance
+    attempts = 0 
+    found = 0
+    
+    while found == 0:        
+        if attempts <= 10:
+            attempts += 1
+            bw, _, res, _ = fsolve(function, x0, args=args, xtol=tol, full_output=True)
+            bw = bw[0]
+            found = 1 if (res == 1 and bw > 0) else 0
+            tol *= 1.15  
+        else:
+            warn("Improved Sheather-Jones failed to converge. Using Silverman's rule instead.")
+            bw = (bw_silverman(x) / np.ptp(x)) ** 2
+            return bw
+            
+    if not bw > 0:
+        warn("Improved Sheather-Jones did not converge to a positive value. Using Silverman's rule instead.")
+        bw = (bw_silverman(x) / np.ptp(x)) ** 2
+        
+    return bw
 
 
-def bw_experimental(x):
+def bw_experimental(x, grid_counts=None, x_std=None, x_range=None):
     """
     Experimental bandwidth estimator.
     """
-    return 0.5 * (bw_silverman(x) + bw_isj(x))
+    return 0.5 * (_bw_silverman(x, x_std) + _bw_isj(x, grid_counts, x_range))
+
+BW_METHODS = {
+    "scott": _bw_scott,
+    "silverman": _bw_silverman,
+    "lscv": bw_lscv,
+    "sj": bw_sj,
+    "isj": _bw_isj,
+    "experimental": bw_experimental,
+}
+
+# Helper functions -------------------------------------------------------------
+def select_bw_method(method="isj"):
+    """
+    Selects a function to compute the bandwidth.
+    Also checks method `bw` is correctly specified.
+    Otherwise, throws an error.
+    
+    Parameters
+    ----------
+    method : str
+        Method to estimate the bandwidth.
+    
+    Returns
+    -------
+    bw_fun: function
+        Function to compute the bandwidth.
+    """
+    method_lower = method.lower()
+
+    if method_lower not in BW_METHODS.keys():
+        raise ValueError((
+            f"Unrecognized bandwidth method.\n"
+            f"Input is: {method}.\n"
+            f"Expected one of: {list(BW_METHODS.keys())}."
+        ))
+    bw_fun = BW_METHODS[method_lower]
+    return bw_fun
+    
+def get_bw(x, bw, grid_counts=None, x_std=None, x_range=None):
+    """
+    Computes bandwidth for a given data `x` and `bw`.
+    Also checks `bw` is correctly specified.
+    
+    Parameters
+    ----------
+    x : 1-D numpy array
+        1 dimensional array of sample data from the 
+        variable for which a density estimate is desired.
+    bw: int, float or str
+        If numeric, indicates the bandwidth and must be positive.
+        If str, indicates the method to estimate the bandwidth.
+    
+    Returns
+    -------
+    bw: float
+        Bandwidth
+    """
+    if isinstance(bw, bool):
+        raise ValueError((
+            f"`bw` must not be of type `bool`.\n"
+            f"Expected a positive numeric or one of the following strings:\n"
+            f"{list(BW_METHODS.keys())}."))
+    if isinstance(bw, (int, float)):
+        if bw < 0:
+            raise ValueError(f"Numeric `bw` must be positive.\nInput: {bw:.4f}.")
+    elif isinstance(bw, str):
+        bw_fun = select_bw_method(method = bw)
+        bw_lower = bw.lower()
+        if bw_lower == "isj":
+            bw = bw_fun(x, grid_counts, x_range)
+        elif bw_lower in ["scott", "silverman"]:
+            bw = bw_fun(x, x_std)
+        elif bw_lower == "experimental":
+            bw = bw_fun(x, grid_counts, x_std, x_range)
+        else:
+            bw = bw_fun(x)
+    else:
+        raise ValueError((
+            f"Unrecognized `bw` argument.\n"
+            f"Expected a positive numeric or one of the following strings:\n"
+            f"{list(BW_METHODS.keys())}."))
+    return bw
+
+
