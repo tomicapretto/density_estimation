@@ -119,8 +119,11 @@ An outline of the simulation is as follows:
 1. Estimate the density function with each one of the methods under study.
 1. Compute the estimation error and the computation time.
 
-This process is repeated a number of times for different 
-sample sizes and different probability distributions.
+We use the same sample sizes and number of repetitions for all the methods
+except when the bandwidth parameter is estimated via the Sheather-Jones method.
+In the first case we do 500 repetitions with sample sizes of 200, 500, 
+1000, 5000, and 10000. In the latter, we do 200 repetitions with sample sizes of
+200, 500 and 1000.
 
 ## Methods compared
 
@@ -229,7 +232,7 @@ with the following characteristics:
   + $w_i$: All the components in the mixture have the same weight $\frac{1}{N}$.
   
 The EM algorithm enables us to fit all the components of the
-Gaussian mixture model entirely from the data. 
+Gaussian mixture model entirely from the data via maximum likelihood. 
 An explanation of this algorithm in this context can be found
 [here](https://github.com/tomicapretto/density_estimation/blob/master/notebooks/04_adaptive_bandwidth_kde.ipynb).
   
@@ -510,7 +513,7 @@ spread and seperation.
 
 8. $\Gamma(k = 1, \theta = 1)$
 9. $\Gamma(k = 2, \theta = 1)$
-10. $Log N(0, 1)$
+10. $\text{Log} N(0, 1)$
 11. $\beta(a = 2.5, b = 1.5)$
 12. $\frac{7}{10}\Gamma(k = 1.5, \theta = 1) + \frac{2}{10}N(5, 1) + \frac{1}{10}N(8, \frac{3}{4})$
 
@@ -529,29 +532,137 @@ for (nm in names(dists)) get_plot(nm)
 
 ## Metrics evaluated
 
-## More info
+In this simulation we compute two metrics. One measures the error and the other
+measures time.
 
-## Time {.tabset}
-### Gaussian KDE {.tabset}
-#### Scott's rule
+### Error
+
+We measure the difference between the estimation $\hat{f}$ and the 
+true function $f$ with the Integrated Squared Error:
+
+$$
+\text{ISE}(\hat{f}(x)) = \int{[\hat{f}(x) - f(x)]^2}dx
+$$
+
+Since we compute the ISE in every iteration we do for a given method, 
+we end up with an ISE empirical distribution^[The integral is computed via 
+the trapezoidal rule using the same grid that is obtained with the density estimate.]. 
+Thus, we are not only able to estimate the MISE, but any other summary we want.
+
+### Time
+
+The time necessary to produce an estimation is originally measured in seconds. 
+However, we may use a different scale depending on the method when plotting. 
+(i.e. when all measurements are in the order of microseconds). 
+
+# Results
+
+Our desire to cover as many cases as possible led us to simulate so 
+many scenarios that it now becomes impractical to analyze them one by one.
+So we decided to take an unusual alternative. 
+On the one hand, we select a subset of the simulated densities and interpret 
+the results we obtained for them. Fortunately, what we conclude here
+is also applicable for the other densities.
+We will make a comment if any particularity is seen in other cases.
+On the other hand, we created an interactive application so 
+anyone interested in doing a deeper analysis or checking our 
+statements can do it in an easy manner without having to write code.
+
+We selected 4 densities based on their different characteristics. 
+They are listed below together with a short description.
+
+* $N(0, 1)$: It is a baseline density. 
+
+* $\frac{1}{2}N(0, \frac{1}{10}) + \frac{1}{2}N(5, 1)$: It is a bimodal distribution
+where the modes moderately separated and present different variability.
+
+* $\text{Log} N(0, 1)$: An asymmetric distribution which is sort of a middle point
+between the two other gamma densities used in the simulation.
+
+* $\beta(2.5, 1.5)$: A distribution bounded on both sides with a moderate skewness.
+
+In this report we interpret boxplots where we visualize the empirical distribution
+of the metrics we computed. We also include some of the heatmaps that
+can be generated in our interactive application.
+
+The steps to access the application can be consulted
+[here](https://github.com/tomicapretto/density_estimation). The
+app lets you generate boxplots to visualize the distribution
+of the metrics for different densities, methods and sample sizes. 
+You can also see heatmaps that present the information in a summarized manner.
+In addition, there is a panel where you can generate random samples, 
+estimate the underlying density function with any of the presented methods
+and compare the result with the true function. 
+More information and examples are within the application.
+
+## Time
+
+### Boxplots {.tabset}
+
+#### Gaussian KDE {.tabset}
+
+The classic Gaussian KDE is expected to be the fastest of the three alternatives 
+we implemented. Its speed is because the implementation is actually an 
+approximation to the Gaussian KDE that bins the observed data and computes
+the summatory as a convolution. 
+[This notebook](https://github.com/tomicapretto/density_estimation/blob/master/notebooks/01_gaussian_kde.ipynb) explains why it is faster and also shows an implementation.
+
+##### Scott's rule
+
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Scott's_rule.png")
 ```
 
-#### Silverman's rule
+The computation time is almost always below 400 μs for all the sample sizes and
+all the densities under study. In all the cases the distribution is right-skewed
+but a long tail is only seen when n=10000 in the second panel.
+
+##### Silverman's rule
+
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Silverman's_rule.png")
 ```
 
-#### Sheather-Jones
+When we use Silverman's rule we are doing exactly the same that with Scott's, 
+but we are also computing the interquartile range of the data. This is what moves
+our times from 200-400μs to 500-1000μs.   
+In general, we can expect the computation time to be similar no matter the 
+underlying distribution. However, the long tails in the first two panels 
+warns us that the time can be larger in some cases. 
+
+<!-- Agregar al final: La realida que esta demora extra, incluso en comparacion a Scott -->
+<!-- no tiene ningun impacto si lo qeu nos interesa es generar hasta centenas  -->
+<!-- de densidades. Recien notaríamos una diferencia cuando queremos generar miles -->
+<!-- de densidades al mismo tiempo. -->
+
+##### Sheather-Jones
+
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Sheather-Jones.png")
 ```
 
-#### Improved Sheather-Jones
+The first two things we note are that we jumped from μs to seconds and 
+the substantial increase in the computation time as we increase the sample size. 
+While the method can be used interactively to estimate a couple of densities 
+based on a moderate number of observations, it becomes impractical if we want 
+to use this bandwidth estimator hundreds or thousands of times. 
+This is the reason why we decided not to run simulations with larger sizes.
+
+As a final note, we highlight the larger variability seen in the first panel. 
+It is a consequence of the root finding algorithm requiring different times to
+converge.
+
+##### Improved Sheather-Jones
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Improved_Sheather-Jones_1.png")
 ```
+
+In this first plot we see that the distribution for the log normal density when 
+n = 200 presents between 10 and 20 outliers. This is a consequence of the root
+finding algorithm taking more time to converge when the number of data points
+is low. The rest of the times are far below 0.0125 seconds so we generated 
+the same plot after a 10% trim to the right tail of each distribution to
+focus on the core of the distribution.
 
 **10% trim:**
 
@@ -559,10 +670,31 @@ knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Improved_Sheather-Jon
 knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Improved_Sheather-Jones_2.png")
 ```
 
-#### Experimental
+We note the mean computation time is around 4ms for all the cases. 
+What's more, this mean value tends to be smaller for larger sample sizes. 
+This is because the root finding algorithm requires less time when there 
+is more data available.
+
+<!-- Agregar despues, tal vez con los heatmaps:  -->
+<!-- Si bien los tiempos son 10 veces mayores a los que necesita un Scott's o un Silverman, -->
+<!-- solo vamos a notar la diferencia cuando tengamos que realizar mas de mil estimaciones. -->
+<!-- Todos estos metodos son igualmente aptos para el uso interactivo cuando se  -->
+<!-- necesitan estimar hasta unas 500 densidades. -->
+
+##### Experimental
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Experimental_1.png")
 ```
+
+Since this method requires computing the bandwidth via Improved Sheather-Jones and
+Silverman's rule, we know its computation time is going to be roughly the sum of
+the times of the mentioned methods. 
+
+Just as happened with the Improved Sheather-Jones, here we also have some 
+outliers when the sample size is low. After trimming the right tail, we see
+the mean time is around 4-5ms.
+
+<!-- Nota agregar: El root finding algorithm se toma mas tiempo para encontrar una solucion  cuando n es chico solo en algunos casos (Log N).  -->
 
 **10% trim:**
 
@@ -570,28 +702,71 @@ knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Experimental_1.png")
 knitr::include_graphics("imgs/boxplots/time/Gaussian_KDE_&_Experimental_2.png")
 ```
 
+#### Adaptive Gaussian KDE {.tabset}
 
-### Adaptive Gaussian KDE {.tabset}
+The adaptive Gaussian KDE is expected to be slower than the Gaussian KDE beforehand.
+This method requires a pilot density estimate which is carried out by the 
+Gaussian KDE, and after producing this estimate it is used to compute a modification
+factor for the bandwidth to be used in a second estimation stage. 
 
-#### Scotts's rule
+Independently of which bandwidth we use, we can see the densities are divided 
+in two groups in terms of time.
+The first group is composed of the densities in the first two panels,
+the Gaussian distribution and the Gaussian mixture. The second group 
+is composed of the log normal and the beta distributions.
+Due to the fact that we have a bandwidth for each data point, the convolution
+cannot be used to compute the estimation. Consequently, when the distribution
+has a bounded domain and we apply a boundary correction, the time demand increase is noticeable. Thus, the time increase in the second group is because the two 
+distributions have a bounded domain and a boundary correction is applied.
+
+##### Scotts's rule
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Scott's_rule.png")
 ```
 
-#### Silverman's rule
+If we compare the computation times seen here with the ones shown for the Scott's
+rule and Gaussian KDE, we can easily see there is a 10 times increase in computation time. As mentioned above, this time increase is more serious when we need to apply
+a boundary correction. 
+
+<!-- No olvidar agregar que estar en 5 ms no nos priva de usar el metodo.  -->
+<!-- La diferencia la vamos a ver la hora de producir cientos o miles de densidades. -->
+
+##### Silverman's rule
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Silverman's_rule.png")
 ```
 
-#### Sheather-Jones
+As happened with the Scott's rule, we also see a substantial increase in 
+computation time. However, in contrast to what happens with the Gaussian KDE, 
+computation times for Scott's and Silverman's rules are very similar
+when using the adaptive Gaussian KDE.  
+In this adaptive scenario, most of the extra time is due to how we compute the
+kernel sum. Thus, the extra computation of the interquartile range for 
+the Silverman's rule does not contribute much to the final result.
+
+##### Sheather-Jones
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Sheather-Jones.png")
 ```
 
-#### Improved Sheather-Jones
+Computations time in the adaptive scenario are very similar to the ones in the
+non-adaptive scenario. When we use the Sheather-Jones bandwidth estimator 
+together with a KDE, the great majority of the time is consumed by the bandwidth 
+calculation. Then, the computation of the density does not impact the result. 
+The only difference between this plot and the one for the Gaussian KDE is that
+here the variability for the Gaussian distribution is smaller.
+
+##### Improved Sheather-Jones
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Improved_Sheather-Jones_1.png")
 ```
+
+Again, we can see the outliers due to slow convergence when the sample size is small. 
+In this simulation we had more problems with convergence that are reflected when
+we apply an extra trim to the right tail of the distribution. From these two plots,
+we can only see that the times are usually below 10ms.  
+
+Heatmaps below are going to tell us the numbers with more accuracy.
 
 **10% trim:**
 
@@ -599,10 +774,13 @@ knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Improved_She
 knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Improved_Sheather-Jones_2.png")
 ```
 
-#### Experimental
+##### Experimental
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Experimental_1.png")
 ```
+
+Same conclusions than in Improved Sheather-Jones. The difference between 
+the bounded and unbounded distributions is very clear in the second plot.
 
 **10% trim:**
 
@@ -610,58 +788,393 @@ knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Experimental
 knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_&_Experimental_2.png")
 ```
 
-### Adaptive Gaussian KDE via EM {.tabset}
-#### Custom
+#### Adaptive Gaussian KDE via EM
 
 ```{r}
 knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_via_EM.png")
 ```
 
-## Error {.tabset}
+The first thing we note is there is a great variability in computation time
+for different sample sizes. Both the mean time and the variability of the time increase. In addition, time also varies between densities. 
+Those densities that are truly a Gaussian mixture are fitted faster, while
+the rest are more time demanding. 
 
-### Scotts's rule {.tabset}
+Since the first plot does not allow us to see clearly the computation times for
+sample sizes 200, 500 and 1000, we generated the following plot.
+
+```{r}
+knitr::include_graphics("imgs/boxplots/time/Adaptive_Gaussian_KDE_via_EM_2.png")
+```
+
+Here we clearly see the time is below 10ms for Gaussian mixtures and 
+below 30ms for the other distributions. 
+
+<!-- Entonces aclarar que este metodo podria ser usado para muchas replicas si nuestro  vector no es tan grande. En el caso que el vector sea grande, demoraremos mas. -->
+
+### Heatmaps {.tabset}
+
+Before we start talking about the results shown in the heatmaps we 
+describe the summaries they present. Each box in the plot corresponds 
+to a combination of a density estimator, a bandwidth method and a sample size. 
+The first number in the first row correponds to the 2% right trimmed mean 
+of the metric in study (time, in this case). 
+The trimming is applied to decrease the effect of serious outliers. 
+The number between parenthesis is the ratio between the best mean value and 
+the mean for the cell, for a given sample size. 
+The best result presents a ratio of 1, while all the rest have a value above 1. 
+Finally, the numbers between brackets in the second row correpond to the central 94% interval for the empirical density.
+
+Colors are used to quickly visualize which methods are close to the best (blue)
+and which methods perform poorly (yellow).
+
+#### $N(0, 1)$
+
+```{r}
+knitr::include_graphics("imgs/heatmaps/time_gaussian_1.png")
+```
+
+    
+#### $\frac{1}{2} N(0, 0.1) + \frac{1}{2} N(5, 1)$
+
+```{r}
+knitr::include_graphics("imgs/heatmaps/time_gmixture_3.png")
+```
+
+#### $\text{Log}N(0, 1)$
+
+```{r}
+knitr::include_graphics("imgs/heatmaps/time_logn_1.png")
+```
+
+#### $\beta(2.5, 1.5)$
+
+```{r}
+knitr::include_graphics("imgs/heatmaps/time_beta_1.png")
+```
+
+<!-- Nota sobre los tiempos: Comentar que la implementacion usada puede ser mejorada -->
+<!-- si se eliminan chequeos interno ya que la funcion no es especifica para -->
+<!-- esta simualcion, sino que puede ser usada por cualquier usuario.  -->
+<!-- Sin embargo, dado que estos chequeos se realizan en todos los casos,  -->
+<!-- la comparacion entre los tiempos tiene sentido. -->
+
+### {.unlisted .unnumbered}
+
+No matter what is the target density and the sample size, the fastest method
+is the combination of the Gaussian KDE with Scott's rule. This method usually
+required between 200 and 300μs in our simulation. The second fastest method
+is the Gaussian KDE with Silverman's rule. As mentioned earlier, the difference
+between these two bandwidths estimators is the computation of 
+the interquartile range of the data.
+
+All the other methods are at least 5 times slower than the fastest. 
+The slowest, by far, is any combination that involves the Sheather-Jones bandwidth. 
+
+**Gaussian KDE**
+
+* Both the Improved Sheather-Jones and the Experimental methods are usually between
+10 and 20 times slower than the fastest method for all the sample sizes except 
+for 200. In this case, a ratio between 40 and 50 is seen for the 
+log-normal density. Generally, the ratio between the mean times decrease as 
+the sample size increses.
+
+* The Sheather-Jones method is between 110 and 4000 times slower than the fastest. 
+These numbers also show the method scales very poorly. It becomes too slow with
+a moderate increase in sample size.
+
+**Adaptive Gaussian KDE**
+
+* When the target density is unbounded (does not require boundary correction) both Scott's and Silverman's rule are approximately between 6 and 13 times 
+slower than the fastest method. 
+The ratio is between 15 and 18 when boundary correction is applied. 
+
+* The Improved Sheather-Jones and Experimental bandwidths are between 17 a 25 times
+slower than the optimal method if no boundary correction is applied. Otherwise, 
+the ratio is usually between 28 and 38. As observed with the classic Gaussian KDE,
+here we also have a larger ratio when the sample size is 200 and the target
+density is the log-normal. It increases to 60-70.
+
+* The Sheather-Jones method is between 110 and 3300 times slower than the fastest.
+
+**Gaussian Mixture via EM**
+
+When the sample size is 1000 or smaller, this method is approximately between 10 
+and 60 times slower than the fastest. However, this ratio varies depending on
+the target distribution. When the target distribution is a Gaussian mixture
+the convergence is faster and the ratio is between 10 and 20. 
+In the other two cases it is between 20 and 60.
+
+When the sample size is 5000 or larger, the method becomes much slower. 
+It is between 200 and 400 slower than the fastest method when the target density is 
+a Gaussian mixture, and between 500 and 1300 in other cases. Thus, we can see
+the method is significantly more time consuming than faster alternatives,
+but its convergence speed is also very variable.
+
+<!-- Para las conclusiones generales: -->
+<!-- Its computational demand is similar than the Adaptive Gaussian KDE with  -->
+<!-- any Improved Sheather-Jones based bandwidth. -->
+
+## Error 
+
+### Boxplots {.tabset}
+
+In all the cases the third column with the Gaussian mixture via EM is kept
+to ease the comparison. However, we must recall it is not using any of the bandwidth
+methods listed in the tabs since all the parameters are fitted via 
+Expectation-Maximization.
+
+#### Scotts's rule
 ```{r}
 knitr::include_graphics("imgs/boxplots/error/Scott's_rule.png")
 ```
 
-### Silverman's rule {.tabset}
+#### Silverman's rule
 ```{r}
 knitr::include_graphics("imgs/boxplots/error/Silverman's_rule.png")
 ```
 
-### Sheather-Jones {.tabset}
+#### Sheather-Jones
 ```{r}
 knitr::include_graphics("imgs/boxplots/error/Sheather-Jones.png")
 ```
 
-### Improved Sheather-Jones {.tabset}
+#### Improved Sheather-Jones
 ```{r}
 knitr::include_graphics("imgs/boxplots/error/Improved_Sheather-Jones.png")
 ```
 
-### Experimental {.tabset}
+#### Experimental
 ```{r}
 knitr::include_graphics("imgs/boxplots/error/Experimental.png")
 ```
 
+### {.unlisted .unnumbered}
+
+As a general comment, we note that in all the cases (except in one that is 
+explained later) the error decreases as we increase the sample size. However,
+this does not mean that if we keep increasing the size we are going to lower the
+error until it is 0 in all the cases.
+
+**$N(0, 1)$**
+
+* If we compare the vertical axes between the different rows we see the Gaussian distribution is the one that is usually estimated with the smallest error.
+
+* The Gaussian mixture fitted via EM performs worse than all the other combinations
+of density estimator and bandwidth.
+
+* All the other bandwidth methods seem to have similar distributions for the error. Their differences will be clearer with the heatmaps.
+
+**$\frac{1}{2} N(0, 0.1) + \frac{1}{2} N(5, 1)$**
+
+* The error is very different for different methods.
+
+* Both Scott's and Silverman's rule perform very poorly, no matter we use 
+the Gaussian KDE or its adaptive version.
+
+* The Gaussian mixture via the EM has the smallest error for all the 
+sample sizes.
+
+* The Sheather-Jones and Improved Sheather-Jones methods have similar performances. 
+They are close to the best, but they do not outperform it. When we use the adaptive
+Gaussian KDE and the ISJ bandwidth, we see the error decreases until it increases again
+(specially when n = 10000). 
+We will try to explain this phenomena with an example later.
+
+* The Experimental bandwidth method improves Silverman's rule performance,
+but it is not as good as what we got with Sheather-Jones / Improved Sheather-Jones
+methods. Also, we see it performs better with the adaptive Gaussian KDE 
+than the classic version.
+
+**$\text{Log}N(0, 1)$**
+
+* No matter which bandwidth method we use, the adaptive KDE shows a smaller error
+than the fixed version.
+
+* No method clearly outperforms the others. 
+However, we can see that using the Scott's rule results in a poor result 
+compared to the other alternatives.
+
+**$\beta(2.5, 1.5)$**
+
+* As with the log-normal distribution we can't see a clear winner from the boxplots,
+but we can see a clear loser. In this case, the Gaussian mixture via EM performs has 
+a considerable larger error than the rest, at least for moderate to small sample sizes.
+
+
+### Heatmaps {.tabset}
+
+#### $N(0, 1)$
+
+```{r}
+knitr::include_graphics("imgs/heatmaps/error_gaussian_1.png")
+```
+
+As noted earlier, regardless of the sample size, the Gaussian mixture via EM has
+a bigger error than any of the other alternatives.
+However, in this case, the relative differences are moderate (i.e. no method doubles the error of another). Overall, the best results are seen when we use the classic
+Gaussian KDE. In addition, with the empirical intervals we can see their
+spread are similar too.
+
+If we focus on smaller sample sizes, we are going to find differences between
+the methods in study. When the method is more flexible, it tends to have a 
+larger error. For example, the Experimental bandwidth has an error 20% higher 
+than the optimal when used with a Gaussian KDE and it goes up to 
+40% when used with its adaptive version.
+
+On the other hand, when the sample size gets larger, all the methods 
+tend to have similar performances. Even though we can see a ratio of 1.29 and other
+of 1.15 when n = 10000, there is no practical difference between any of the
+bandwidths with such a large sample. 
+
+#### $\frac{1}{2} N(0, 0.1) + \frac{1}{2} N(5, 1)$
+
+```{r}
+knitr::include_graphics("imgs/heatmaps/error_gmixture_3.png")
+```
+
+In this case there is a big difference between the error along the methods
+under study. It can be easily noted by seeing the color varies very little
+within a column, but it varies a lot between columns. 
+For all the sample sizes, the Gaussian mixture via EM has the lowest mean error, 
+by far. 
+
+The Sheather-Jones and the Improved Sheather-Jones bandwidths share the second
+place. They perform a little better when used with the adaptive Gaussian KDE. 
+All the other methods have an error between 50 and 2500 times higher than
+the best. 
+
+The most interesting thing of this case is that the errors are so different
+that you ask yourself if an error ratio of 500 means the method reflected
+in the numerator is 500 times worse than the method in the denominator. This
+motivates an example we are going to mention right after this section.
+
+Another interesting issue to remark is that when using the Adaptive Gaussian KDE
+and the Improved Sheather-Jones bandwidth, the error does not decrease
+monotonically as the sample size increases. 
+Again, this is explained with an example in the next section.
+
+#### $\text{Log}N(0, 1)$
+
+```{r}
+knitr::include_graphics("imgs/heatmaps/error_logn_1.png")
+```
+
+No matter the bandwidth method used, the adaptive KDE works better than the
+fixed bandwidth alternative. 
+
+In this scenario we see that, with the exception of the Scott's rule, 
+all the bandwidth estimators together with the Adaptive Gaussian KDE
+and the Gaussian mixture via EM are the methods with the best results for
+all the sample sizes. 
+
+In a case like this, where many methods have a similar mean error,
+we can compare their variability. For example, let's consider n = 10000. 
+The Silverman's rule shows the shortest interval, 
+[0.0022, 0.0034], while the Improved Sheather-Jones method shows the widest, 
+[0.0013, 0.0084]. When choosing a density estimation method, one should also
+consider how variable it is.
+
+#### $\beta(2.5, 1.5)$
+
+```{r}
+knitr::include_graphics("imgs/heatmaps/error_beta_1.png")
+```
+
+With the exception of the Gaussian mixture via EM and methods that use
+the Sheather-Jones bandwidth, there are no large differences between
+the other methods. No method is superior for all the sample sizes.
+
+We can note the fixed bandwidth Gaussian KDE has a slightly smaller
+mean error than the adaptive variant. 
+
+If, conditional on density estimator, we look at small to moderate sizes 
+(200, 500 and 1000) we see that all the bandwidth methods perform similarly.
+However, Scott's rule is a little worse than the rest when the 
+sample size is large (5000, 10000).
+
+Finally, given a sample size, spread measured by the length of 
+the 94% central density interval is similar for all bandwidths.
+
+<!-- En los ejemplos poner la estimacion de la gaussian mixture 3 mediante  -->
+<!-- EM (que da el mejor resultado en terminos de error) y poner mediante  -->
+<!-- ISJ y experimental. Lo que quiero mostrar aca es que por mas que el error  -->
+<!-- sea entre 250 y 500 veces mas grande, el resultado sigue siendo bueno a simple vista. -->
+
+<!-- El peligro de usar una alternativa como el ISJ es que puede dar una  -->
+<!-- estimacion muy pequeña del ancho de banda, y por lo tanto ser muy rugosa -->
+<!-- en otas regiones no tan picudas de la distribucion.  -->
+<!-- Por eso la alternativa del experimental. Tal vez no captas los picos tal como son, -->
+<!-- pero no introducis ruido excesivo. -->
+
 ## Examples
 
-#### Distribution 4: <font size="2"> $\frac{1}{2} N(0, \frac{1}{10}) + \frac{1}{2} N(5, 1)$ </font> {.tabset}
-##### ISJ
-```{r example_4, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.width=6, fig.height=4, out.width = "70%"}
-get_example(name = "gmixture_3", bw = "isj", size = 5000)
+#### Distribution 5: <font size="3"> $\frac{1}{2} N(0, \frac{1}{10}) + \frac{1}{2} N(5, 1)$ </font> {.tabset}
+
+##### Gaussian mixture via EM
+```{r example_1a, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example_em(name = "gmixture_3", size = 500, reps = 5)
+title("Size = 500")
+get_example_em(name = "gmixture_3", size = 1000, reps = 5)
+title("Size = 1000")
+get_example_em(name = "gmixture_3", size = 5000, reps = 5)
+title("Size = 5000")
+get_example_em(name = "gmixture_3", size = 10000, reps = 5)
+title("Size = 10000")
 ```
 
-##### Experimental
-```{r, dev = "tikz", fig.process = pdf2png, fig.width=6, fig.height=4, out.width = "70%"}
-get_example(name = "gmixture_3", bw = "experimental", size = 5000)
+
+##### ISJ - Fixed
+```{r example_1b, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "isj", size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "isj", size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "isj", size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "isj", size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
 ```
 
-## Some examples
+##### ISJ - Adaptive
+```{r example_1c, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "isj", size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "isj", size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "isj", size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "isj", size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
 
-Aca quiero poner algunos ejemplos de distribuciones y su estimacion segun diferentes metodos.
-Tal vez con 10/20 replicas. 
-El concepto que quiero transmitir es que no solo tenemos que mirar al ISE, sino tambien 
+##### Experimental - Fixed
+```{r example_1d, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "experimental", size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "experimental", size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "experimental", size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "experimental", size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
+
+##### Experimental - Adaptive
+```{r example_1e, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "experimental", size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "experimental", size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "experimental", size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "experimental", size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
 
 # Time
 
@@ -683,7 +1196,7 @@ The Sheather-Jones method is not suitable for a fast and practical usage. Even w
 
 The adaptive estimator is between 1.5 and 3.5 times slower than the Fixed Gaussian KDE (see any of the Gaussian/Gaussian mixtures heatmaps).
 
-If we consider the heatmaps related to the Gamma, Beta and LogNormal distributions we will see computational times multiplied between 15 and 50 times. The increase is not only due to the adaptivity. It also represents the overhead induced by the boundary reflection method. 
+If we consider the heatmaps related to the Gamma, Beta and Log-Normal distributions we will see computational times multiplied between 15 and 50 times. The increase is not only due to the adaptivity. It also represents the overhead induced by the boundary reflection method. 
 
 Whe the boundary correction is applied with a fixed Gaussian KDE via convolution, this does not induce a substantial overhead. But when it is applied with an adaptive KDE, the overhead is important because you cannot use a fast method to perform the calculatons.
 

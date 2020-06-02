@@ -201,5 +201,34 @@ get_example <- function(name = "gmixture_2", bw = "isj",
   }
 }
 
-#TODO: See why get_example("gmixture_4") fails so BAD.
+get_example_em <- function(name = "gmixture_2", size = 1000, reps = 10) {
+  
+  .dists <- dists[[name]]
+  .params <- params[[name]]
+  .wts <- wts[[name]]
+  .ttl <- titles[[name]]
+  
+  out <- mixture_pdf(.dists, .params, .wts)
+  
+  samples <- replicate(reps, 
+                       do.call(mixture_rvs, list(.dists, .params, size, .wts)), 
+                       simplify = FALSE)
+  
+  estimate <- purrr::map(samples, src$estimate_density_em)
+  
+  max_y <- max(out$pdf, max(sapply(estimate, function(x) max(x[[2]], na.rm = TRUE))))
+  
+  par(mar = c(4.5, 4, 1.5, .8), mgp=c(1.8, 0.6, 0))
+  plot(out$x, out$pdf, type = "l", 
+       lwd = 5, lty = "dashed",
+       ylim = c(0, max_y * 1.01),
+       xlab = '$x$', ylab = '$f(x)$')
+  
+  for (i in seq_along(estimate)) {
+    lines(estimate[[i]][[1]], estimate[[i]][[2]], 
+          lwd = 4, col = "#2980B966")
+  }
+}
+
+# TODO: See why get_example("gmixture_4") fails so BAD.
 
