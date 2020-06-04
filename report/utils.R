@@ -14,7 +14,7 @@ pdf2png <- function(path) {
 
 cont_dist_bounds <- list(
   "norm" = function(.params) {
-    width <- 3 * .params[[2]]
+    width <- 3.5 * .params[[2]]
     c(.params[[1]] - width, .params[[1]] + width)
   },
   "t" = function(.params) {
@@ -177,7 +177,9 @@ get_example <- function(name = "gmixture_2", bw = "isj",
   .dists <- dists[[name]]
   .params <- params[[name]]
   .wts <- wts[[name]]
-  .ttl <- titles[[name]]
+  .custom_lims <- range(mixture_grid(.dists, .params))
+  
+  if (name == "gmixture_3") .custom_lims[[1]] <- -1
   
   out <- mixture_pdf(.dists, .params, .wts)
   
@@ -185,7 +187,8 @@ get_example <- function(name = "gmixture_2", bw = "isj",
                        do.call(mixture_rvs, list(.dists, .params, size, .wts)), 
                        simplify = FALSE)
 
-  estimate <- purrr::map(samples, src$estimate_density, bw = bw, adaptive = adaptive)
+  estimate <- purrr::map(samples, src$estimate_density, bw = bw, 
+                         adaptive = adaptive, custom_lims = .custom_lims)
   
   max_y <- max(out$pdf, max(sapply(estimate, function(x) max(x[[2]], na.rm = TRUE))))
   
@@ -206,7 +209,8 @@ get_example_em <- function(name = "gmixture_2", size = 1000, reps = 10) {
   .dists <- dists[[name]]
   .params <- params[[name]]
   .wts <- wts[[name]]
-  .ttl <- titles[[name]]
+  .custom_lims <- range(mixture_grid(.dists, .params))
+  if (name == "gmixture_3") .custom_lims[[1]] <- -1
   
   out <- mixture_pdf(.dists, .params, .wts)
   
@@ -214,7 +218,7 @@ get_example_em <- function(name = "gmixture_2", size = 1000, reps = 10) {
                        do.call(mixture_rvs, list(.dists, .params, size, .wts)), 
                        simplify = FALSE)
   
-  estimate <- purrr::map(samples, src$estimate_density_em)
+  estimate <- purrr::map(samples, src$estimate_density_em, custom_lims = .custom_lims)
   
   max_y <- max(out$pdf, max(sapply(estimate, function(x) max(x[[2]], na.rm = TRUE))))
   

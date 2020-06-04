@@ -1000,7 +1000,6 @@ compared to the other alternatives.
 but we can see a clear loser. In this case, the Gaussian mixture via EM performs has 
 a considerable larger error than the rest, at least for moderate to small sample sizes.
 
-
 ### Heatmaps {.tabset}
 
 #### $N(0, 1)$
@@ -1108,10 +1107,358 @@ the 94% central density interval is similar for all bandwidths.
 
 ## Examples
 
-#### Distribution 5: <font size="3"> $\frac{1}{2} N(0, \frac{1}{10}) + \frac{1}{2} N(5, 1)$ </font> {.tabset}
+In this section we include examples to show how the methods we introduced work
+at estimating the four densities analized. 
+We are going to use the same sample sizes than we used in the simulation and
+with 5 replications in each case. Anyone interested in further experimentation
+can use the shiny application mentioned earlier.
+
+#### Distribution 1: <font size="3"> $N(0, 1)$ </font> {.tabset}
+
+##### Scott's {.tabset}
+###### Fixed
+```{r example_1a, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gaussian_1", bw = "scott", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gaussian_1", bw = "scott", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "gaussian_1", bw = "scott", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "gaussian_1", bw = "scott", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
+
+###### Adaptive
+```{r example_1b, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gaussian_1", bw = "scott", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gaussian_1", bw = "scott", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "gaussian_1", bw = "scott", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "gaussian_1", bw = "scott", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
+
+##### Silverman's {.tabset}
+###### Fixed
+```{r example_1c, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gaussian_1", bw = "silverman", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gaussian_1", bw = "silverman", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "gaussian_1", bw = "silverman", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "gaussian_1", bw = "silverman", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
+
+###### Adaptive
+```{r example_1d, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gaussian_1", bw = "silverman", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gaussian_1", bw = "silverman", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "gaussian_1", bw = "silverman", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "gaussian_1", bw = "silverman", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
+
+##### Sheather-Jones {.tabset}
+###### Fixed
+```{r example_1e, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.height = 2.7}
+par(mfrow = c(1, 2))
+get_example(name = "gaussian_1", bw = "sj", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gaussian_1", bw = "sj", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+```
+
+###### Adaptive
+```{r example_1f, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.height = 2.7}
+par(mfrow = c(1, 2))
+get_example(name = "gaussian_1", bw = "sj", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gaussian_1", bw = "sj", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+```
+
+##### Improved Sheather-Jones {.tabset}
+###### Fixed
+```{r example_1g, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gaussian_1", bw = "isj", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gaussian_1", bw = "isj", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "gaussian_1", bw = "isj", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "gaussian_1", bw = "isj", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
+
+###### Adaptive
+```{r example_1h, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gaussian_1", bw = "isj", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gaussian_1", bw = "isj", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "gaussian_1", bw = "isj", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "gaussian_1", bw = "isj", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
+
+##### Experimental {.tabset}
+###### Fixed
+```{r example_1i, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gaussian_1", bw = "experimental", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gaussian_1", bw = "experimental", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "gaussian_1", bw = "experimental", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "gaussian_1", bw = "experimental", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
+
+###### Adaptive
+```{r example_1j, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gaussian_1", bw = "experimental", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gaussian_1", bw = "experimental", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "gaussian_1", bw = "experimental", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "gaussian_1", bw = "experimental", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
 
 ##### Gaussian mixture via EM
-```{r example_1a, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+```{r example_1k, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example_em(name = "gaussian_1", size = 500, reps = 5)
+title("Size = 500")
+get_example_em(name = "gaussian_1", size = 1000, reps = 5)
+title("Size = 1000")
+get_example_em(name = "gaussian_1", size = 5000, reps = 5)
+title("Size = 5000")
+get_example_em(name = "gaussian_1", size = 10000, reps = 5)
+title("Size = 10000")
+```
+
+
+#### Distribution 5: <font size="3"> $\frac{1}{2} N(0, \frac{1}{10}) + \frac{1}{2} N(5, 1)$ </font> {.tabset}
+
+##### Scott's {.tabset}
+###### Fixed
+```{r example_2a, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "scott", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "scott", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "scott", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "scott", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
+
+###### Adaptive
+```{r example_2b, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "scott", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "scott", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "scott", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "scott", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
+
+##### Silverman's {.tabset}
+###### Fixed
+```{r example_2c, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "silverman", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "silverman", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "silverman", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "silverman", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
+
+###### Adaptive
+```{r example_2d, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "silverman", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "silverman", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "silverman", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "silverman", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
+
+##### Sheather-Jones {.tabset}
+###### Fixed
+```{r example_2e, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.height = 2.7}
+par(mfrow = c(1, 2))
+get_example(name = "gmixture_3", bw = "sj", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "sj", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+```
+
+###### Adaptive
+```{r example_2f, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.height = 2.7}
+par(mfrow = c(1, 2))
+get_example(name = "gmixture_3", bw = "sj", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "sj", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+```
+
+##### Improved Sheather-Jones {.tabset}
+###### Fixed
+```{r example_2g, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "isj", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "isj", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "isj", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "isj", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
+
+###### Adaptive
+```{r example_2h, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "isj", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "isj", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "isj", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "isj", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
+
+##### Experimental {.tabset}
+###### Fixed
+```{r example_2i, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "experimental", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "experimental", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "experimental", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "experimental", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
+
+###### Adaptive
+```{r example_2j, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "gmixture_3", bw = "experimental", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "gmixture_3", bw = "experimental", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "gmixture_3", bw = "experimental", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "gmixture_3", bw = "experimental", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
+
+##### Gaussian mixture via EM
+```{r example_2k, cache = TRUE, dev = "tikz", fig.process = pdf2png}
 par(mfrow = c(2, 2))
 get_example_em(name = "gmixture_3", size = 500, reps = 5)
 title("Size = 500")
@@ -1123,89 +1470,525 @@ get_example_em(name = "gmixture_3", size = 10000, reps = 5)
 title("Size = 10000")
 ```
 
+### {.unlisted .unnumbered}
 
-##### ISJ - Fixed
-```{r example_1b, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+When we analyzed the simulations results from this density we made the following
+two observations:
+
+* The Gaussian Mixture via EM is the method with the lowest error.
+All the other methods showed an error many times higher.
+
+* We observed that when we used the combination of the adaptive Gaussian KDE
+and the bandwidth estimated via Improved Sheather-Jones, the error does not
+decrease monotonically as we increased the sample size.
+
+If we look at the tab where we use the Gaussian mixture via EM, we note the result
+is atonishingly close to the true density function, even for small sample sizes. 
+But the reason because it is working so well is not that the model is 
+very flexible and can easily adapt to a huge variety of situations. 
+It works so well just because we are generating data from a probability 
+density function that is a particular case of the model we are using.
+Thus, when we fit the model, it does an excellent job at discovering the 
+underlying structure very easily.
+<!-- Cuando hablemos de este metodo en las conclusiones, mencionar este asunto. -->
+<!-- El mensaje a transmitir es que este metodo anda muy bien en mezclas -->
+<!-- de gaussianas, pero en general mete ruido en otros casos. -->
+
+On the other hand, all the other methods can only effectively detect the position of the
+two modes. Given the large differences between the spreads around the modes,
+most of the methods oversmooth around the highest peak. 
+The only two bandwidth methods that do not oversmooth are the Sheather-Jones and
+the Improved Sheather-Jones, at the cost of undersmoothing. 
+While they capture the shape of the function around the highest peak, they
+introduce a lot of unnecesary noise when estimating the function around
+the other mode.
+
+Finally, we discuss why the error does not decrease monotonically as we increase
+the sample size when we use the adaptive KDE with the Improved Sheather-Jones
+bandwidth. The adaptive method decreases the bandwidth in regions of high 
+density, and increase it in regions of low density. Before adapting the bandwidth
+the height of the function in the mode is already right. Since there are so many
+points around the adaptiveness makes this mode higher, which induces more error.
+As the difference between the estimated and the true peak increases, so does 
+the error.
+
+
+#### Distribution 10: <font size="3"> $\text{Log}N(0, 1)$ </font> {.tabset}
+##### Scott's {.tabset}
+###### Fixed
+```{r example_3a, cache = TRUE, dev = "tikz", fig.process = pdf2png}
 par(mfrow = c(2, 2))
-get_example(name = "gmixture_3", bw = "isj", size = 500, adaptive = FALSE, reps = 5)
+get_example(name = "logn_1", bw = "scott", 
+            size = 500, adaptive = FALSE, reps = 5)
 title("Size = 500")
-get_example(name = "gmixture_3", bw = "isj", size = 1000, adaptive = FALSE, reps = 5)
+get_example(name = "logn_1", bw = "scott", 
+            size = 1000, adaptive = FALSE, reps = 5)
 title("Size = 1000")
-get_example(name = "gmixture_3", bw = "isj", size = 5000, adaptive = FALSE, reps = 5)
+get_example(name = "logn_1", bw = "scott", 
+            size = 5000, adaptive = FALSE, reps = 5)
 title("Size = 5000")
-get_example(name = "gmixture_3", bw = "isj", size = 10000, adaptive = FALSE, reps = 5)
+get_example(name = "logn_1", bw = "scott", 
+            size = 10000, adaptive = FALSE, reps = 5)
 title("Size = 10000")
 ```
 
-##### ISJ - Adaptive
-```{r example_1c, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+###### Adaptive
+```{r example_3b, cache = TRUE, dev = "tikz", fig.process = pdf2png}
 par(mfrow = c(2, 2))
-get_example(name = "gmixture_3", bw = "isj", size = 500, adaptive = TRUE, reps = 5)
+get_example(name = "logn_1", bw = "scott", 
+            size = 500, adaptive = TRUE, reps = 5)
 title("Size = 500")
-get_example(name = "gmixture_3", bw = "isj", size = 1000, adaptive = TRUE, reps = 5)
+get_example(name = "logn_1", bw = "scott", 
+            size = 1000, adaptive = TRUE, reps = 5)
 title("Size = 1000")
-get_example(name = "gmixture_3", bw = "isj", size = 5000, adaptive = TRUE, reps = 5)
+get_example(name = "logn_1", bw = "scott", 
+            size = 5000, adaptive = TRUE, reps = 5)
 title("Size = 5000")
-get_example(name = "gmixture_3", bw = "isj", size = 10000, adaptive = TRUE, reps = 5)
+get_example(name = "logn_1", bw = "scott", 
+            size = 10000, adaptive = TRUE, reps = 5)
 title("Size = 10000")
 ```
 
-##### Experimental - Fixed
-```{r example_1d, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+##### Silverman's {.tabset}
+###### Fixed
+```{r example_3c, cache = TRUE, dev = "tikz", fig.process = pdf2png}
 par(mfrow = c(2, 2))
-get_example(name = "gmixture_3", bw = "experimental", size = 500, adaptive = FALSE, reps = 5)
+get_example(name = "logn_1", bw = "silverman", 
+            size = 500, adaptive = FALSE, reps = 5)
 title("Size = 500")
-get_example(name = "gmixture_3", bw = "experimental", size = 1000, adaptive = FALSE, reps = 5)
+get_example(name = "logn_1", bw = "silverman", 
+            size = 1000, adaptive = FALSE, reps = 5)
 title("Size = 1000")
-get_example(name = "gmixture_3", bw = "experimental", size = 5000, adaptive = FALSE, reps = 5)
+get_example(name = "logn_1", bw = "silverman", 
+            size = 5000, adaptive = FALSE, reps = 5)
 title("Size = 5000")
-get_example(name = "gmixture_3", bw = "experimental", size = 10000, adaptive = FALSE, reps = 5)
+get_example(name = "logn_1", bw = "silverman", 
+            size = 10000, adaptive = FALSE, reps = 5)
 title("Size = 10000")
 ```
 
-##### Experimental - Adaptive
-```{r example_1e, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+###### Adaptive
+```{r example_3d, cache = TRUE, dev = "tikz", fig.process = pdf2png}
 par(mfrow = c(2, 2))
-get_example(name = "gmixture_3", bw = "experimental", size = 500, adaptive = TRUE, reps = 5)
+get_example(name = "logn_1", bw = "silverman", 
+            size = 500, adaptive = TRUE, reps = 5)
 title("Size = 500")
-get_example(name = "gmixture_3", bw = "experimental", size = 1000, adaptive = TRUE, reps = 5)
+get_example(name = "logn_1", bw = "silverman", 
+            size = 1000, adaptive = TRUE, reps = 5)
 title("Size = 1000")
-get_example(name = "gmixture_3", bw = "experimental", size = 5000, adaptive = TRUE, reps = 5)
+get_example(name = "logn_1", bw = "silverman", 
+            size = 5000, adaptive = TRUE, reps = 5)
 title("Size = 5000")
-get_example(name = "gmixture_3", bw = "experimental", size = 10000, adaptive = TRUE, reps = 5)
+get_example(name = "logn_1", bw = "silverman", 
+            size = 10000, adaptive = TRUE, reps = 5)
 title("Size = 10000")
 ```
 
-# Time
+##### Sheather-Jones {.tabset}
+###### Fixed
+```{r example_3e, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.height = 2.7}
+par(mfrow = c(1, 2))
+get_example(name = "logn_1", bw = "sj", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "logn_1", bw = "sj", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+```
 
-### Fixed Gaussian
+###### Adaptive
+```{r example_3f, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.height = 2.7}
+par(mfrow = c(1, 2))
+get_example(name = "logn_1", bw = "sj", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "logn_1", bw = "sj", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+```
 
-The computation times are not related to the density that is being estimated. The comments/conclusions presented apply to each method in general.
+##### Improved Sheather-Jones {.tabset}
+###### Fixed
+```{r example_3g, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "logn_1", bw = "isj", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "logn_1", bw = "isj", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "logn_1", bw = "isj", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "logn_1", bw = "isj", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
 
-The best times are observed when the bandwidth is estimated via Scott's or Silverman's rule. Their computational times are identical, irrespectively of sample size. The mean computation time ranges from 0.7ms when $n=200$ to 1.1ms when $n=10000$.
+###### Adaptive
+```{r example_3h, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "logn_1", bw = "isj", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "logn_1", bw = "isj", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "logn_1", bw = "isj", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "logn_1", bw = "isj", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
 
-Both Scott's and Silverman's rules have identical computational times because they perform the same amount of operations (they just differ in a multiplicative constant).
+##### Experimental {.tabset}
+###### Fixed
+```{r example_3i, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "logn_1", bw = "experimental", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "logn_1", bw = "experimental", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "logn_1", bw = "experimental", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "logn_1", bw = "experimental", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
 
-The Improved Sheather-Jones is between 6 and 7 times slower than the rules of thumb, but its demand is constant across the different sample sizes. Consequently, for a sample size of 10000 it is ~ 3.5 times slower than Scott's and Silverman's rule.
+###### Adaptive
+```{r example_3j, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "logn_1", bw = "experimental", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "logn_1", bw = "experimental", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "logn_1", bw = "experimental", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "logn_1", bw = "experimental", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
 
-The experimental bandwidth, which requires computing both a rule of thumb and the improved Sheather-Jones bandwidths, has a time demand approximately equal to the sum of both. It does not imply a substantial overhead compared to ISJ.
+##### Gaussian mixture via EM
+```{r example_3k, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example_em(name = "logn_1", size = 500, reps = 5)
+title("Size = 500")
+get_example_em(name = "logn_1", size = 1000, reps = 5)
+title("Size = 1000")
+get_example_em(name = "logn_1", size = 5000, reps = 5)
+title("Size = 5000")
+get_example_em(name = "logn_1", size = 10000, reps = 5)
+title("Size = 10000")
+```
 
-The Sheather-Jones method is not suitable for a fast and practical usage. Even with a size of 1000 the method takes more than 2 seconds on average. 
+#### Distribution 11: <font size="3"> $\beta(2.5, 1.5)$ </font> {.tabset}
+##### Scott's {.tabset}
+###### Fixed
+```{r example_4a, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "beta_1", bw = "scott", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "beta_1", bw = "scott", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "beta_1", bw = "scott", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "beta_1", bw = "scott", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
 
-### Adaptive Gaussian
+###### Adaptive
+```{r example_4b, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "beta_1", bw = "scott", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "beta_1", bw = "scott", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "beta_1", bw = "scott", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "beta_1", bw = "scott", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
 
-The adaptive estimator is between 1.5 and 3.5 times slower than the Fixed Gaussian KDE (see any of the Gaussian/Gaussian mixtures heatmaps).
+##### Silverman's {.tabset}
+###### Fixed
+```{r example_4c, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "beta_1", bw = "silverman", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "beta_1", bw = "silverman", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "beta_1", bw = "silverman", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "beta_1", bw = "silverman", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
 
-If we consider the heatmaps related to the Gamma, Beta and Log-Normal distributions we will see computational times multiplied between 15 and 50 times. The increase is not only due to the adaptivity. It also represents the overhead induced by the boundary reflection method. 
+###### Adaptive
+```{r example_4d, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "beta_1", bw = "silverman", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "beta_1", bw = "silverman", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "beta_1", bw = "silverman", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "beta_1", bw = "silverman", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
 
-Whe the boundary correction is applied with a fixed Gaussian KDE via convolution, this does not induce a substantial overhead. But when it is applied with an adaptive KDE, the overhead is important because you cannot use a fast method to perform the calculatons.
+##### Sheather-Jones {.tabset}
+###### Fixed
+```{r example_4e, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.height = 2.7}
+par(mfrow = c(1, 2))
+get_example(name = "beta_1", bw = "sj", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "beta_1", bw = "sj", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+```
 
-----------------------------------------
+###### Adaptive
+```{r example_4f, cache = TRUE, dev = "tikz", fig.process = pdf2png, fig.height = 2.7}
+par(mfrow = c(1, 2))
+get_example(name = "beta_1", bw = "sj", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "beta_1", bw = "sj", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+```
 
-Idea: The estimated computation times could be used to flag users, or at least to be included in documentation.
+##### Improved Sheather-Jones {.tabset}
+###### Fixed
+```{r example_4g, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "beta_1", bw = "isj", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "beta_1", bw = "isj", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "beta_1", bw = "isj", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "beta_1", bw = "isj", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
 
-The ISJ method could be further improved. Within the method you compute a relative frequency per bin. These could be re-utilized in the FFT. Currently they are being computed twice. What's more, other things (like minimum, maximum, SDs, etc) are being computed twice.
+###### Adaptive
+```{r example_4h, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "beta_1", bw = "isj", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "beta_1", bw = "isj", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "beta_1", bw = "isj", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "beta_1", bw = "isj", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
 
+##### Experimental {.tabset}
+###### Fixed
+```{r example_4i, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "beta_1", bw = "experimental", 
+            size = 500, adaptive = FALSE, reps = 5)
+title("Size = 500")
+get_example(name = "beta_1", bw = "experimental", 
+            size = 1000, adaptive = FALSE, reps = 5)
+title("Size = 1000")
+get_example(name = "beta_1", bw = "experimental", 
+            size = 5000, adaptive = FALSE, reps = 5)
+title("Size = 5000")
+get_example(name = "beta_1", bw = "experimental", 
+            size = 10000, adaptive = FALSE, reps = 5)
+title("Size = 10000")
+```
+
+###### Adaptive
+```{r example_4j, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example(name = "beta_1", bw = "experimental", 
+            size = 500, adaptive = TRUE, reps = 5)
+title("Size = 500")
+get_example(name = "beta_1", bw = "experimental", 
+            size = 1000, adaptive = TRUE, reps = 5)
+title("Size = 1000")
+get_example(name = "beta_1", bw = "experimental", 
+            size = 5000, adaptive = TRUE, reps = 5)
+title("Size = 5000")
+get_example(name = "beta_1", bw = "experimental", 
+            size = 10000, adaptive = TRUE, reps = 5)
+title("Size = 10000")
+```
+
+##### Gaussian mixture via EM
+```{r example_4k, cache = TRUE, dev = "tikz", fig.process = pdf2png}
+par(mfrow = c(2, 2))
+get_example_em(name = "beta_1", size = 500, reps = 5)
+title("Size = 500")
+get_example_em(name = "beta_1", size = 1000, reps = 5)
+title("Size = 1000")
+get_example_em(name = "beta_1", size = 5000, reps = 5)
+title("Size = 5000")
+get_example_em(name = "beta_1", size = 10000, reps = 5)
+title("Size = 10000")
+```
+
+## Conclusions
+
+Vamos a establecer conclusiones en término de las métricas evaluadas, y finalmente
+una conclusión global junto a recomendaciones.
+
+### Time
+
+Undoubtedly the fastest method is the combination of the fixed bandwidth
+Gaussian KDE with its bandwidth parameter estimated via Scott's rule. 
+This method required between 200-300μs on average for all the sample sizes and
+density functions. It is easy to see how well it scales:
+it required around 200μs per iteration when the sample size was 200 and 
+around 300μs when the sample size was 10000. While the 
+amount of data increased by a factor of 50, the time required to compute
+the estimation only increased by a factor of 1.5. 
+This method can be used to estimate a thousand densities almost instantaneously, which
+is very valuable when exploring samples coming from a replication method.
+
+If we decide to use the Silverman's rule to perform the bandwidth estimation
+instead of Scott's rule, we multiply the computational time by around 2. 
+This still gives us as method that can be used to estimate a thousand densities
+in less than a second.
+
+All the other methods can still be used in practise. However, not all of them 
+are suitable for interactive estimation of hundreds or thousand densities. 
+With the exception of the Sheather-Jones bandwidth estimator and the
+Gaussian mixture via EM with sample sizes above 1000, all the other alternatives
+can be used to generate up to some hundreds density estimations within 
+one or two seconds. 
+
+### Error
+
+Unlike time, there is not a method with the lowest error under all circumstances. 
+What is more, methods that are great in some cases, are bad in others.
+For example, the Gaussian mixture via EM had an incredible low error when
+estimating the Gaussian mixture $\frac{1}{2}N(0, \frac{1}{10}) + \frac{1}{2}N(5, 1)$
+but did not perform so well when estimating a simple Gaussian distribution or 
+the lightly skewed Beta. In general, we expect this method to behave extremely
+well when the true density function is a Gaussian mixture, but we are not 
+that sure in other cases.
+
+Nevertheless, there are methods that can be left out of consideration. For example,
+the de facto Gaussian KDE + Scott's rule. While this is the fastest approach, it 
+is not superior to any of the other methods in terms of error for any of the
+densities under study. By just using Silverman's rule instead of Scott's, one
+have a better performance in broader types of distributions with a very little
+computational time increase (see the log-normal density, for example). 
+However, this rule of thumb still oversmooths significantly when the 
+function has more than one mode.
+
+The Sheather-Jones works well with bell-shaped densities
+and better than Gaussian rules of thumb when the density is skewed. 
+However, it is not better than the Improved Sheather-Jones and its
+computational time make it only suitable for a limited range of situations.
+
+The Improved Sheather-Jones bandwidth estimator shows good results for 
+the vast majority of the densities we simulated. However, its capacity to 
+capture spiky regions very well is what makes it very noisy in other parts of 
+the function. In these cases it is basically returning a very low bandwidth 
+estimate which is effective when there is a lot of data concentrated 
+but is noisy when data is more sparse.
+
+Our experimental proposal is not the best alternative under almost any of 
+the circumstances we have simulated. But, it is always close or 
+very close to the best.
+When the density is bell-shaped, it does almost as well as methods
+tailored for that situation (i.e. Scott's / Silverman's rule). 
+When the density is skewed it does almost as well as the Improved
+Sheather-Jones, but it works better in the 
+$\frac{1}{2}N(0, \frac{1}{10}) + \frac{1}{2}N(5, 1)$ example. 
+Also, while it is not a perfect fit for multimodal distributions, it
+does better than rules of thumb without undersmoothing. What is more,
+when used together with an adaptive KDE, the resulting estimator
+is a fair trade-off between other alternatives 
+(see $\frac{1}{2}N(0, \frac{1}{10}) + \frac{1}{2}N(5, 1)$ example).
+
+Finally, using an adaptive bandwidth instead of a fixed one usually 
+results in a better estimator when the target density contains 
+multiple modes and/or is skewed. 
+However, it can also introduce undesirable noise, specially when the true
+density function is very smooth and the sample size is low.
+For an example, you can see the $N(0, 1)$ and $\beta(2.5, 1.5)$ distributions
+and any of the adaptive estimators with a sample size of 500.
+
+### Recommendation
+
+Before making any final conclusion, it is important to remark that any of 
+the methods can be used in practise. Some are more appropiate than others
+depending on the context of the application. 
+
+A conservative approach is to continue using the well-tested Gaussian KDE + 
+Silverman's rule. It is one of the fastest available methods and produces
+fair to very accurate density estimates, with the exception of multimodal
+distributions.
+
+On the other hand, we believe the experimental proposal could be adopted. 
+This method was proposed as a balance between Silverman's rule and
+the Improved Sheather-Jones method. When the density function is more or less
+bell-shaped, both approaches result in a similar bandwidth. When the function
+is skewed, the ISJ method usually captures better the shape of the function, at
+the expense of some noise. Averaging it with Silverman's rule 
+bandwidth results in a smoother function. And more importantly,
+when the distribution is multimodal, they tend to suffer from opposite problems.
+While Silverman's rule oversmooths, the Improved Sheather-Jones undersmooths.
+Thus, by taking their average, the final estimation is better than 
+what each method offers on its own.
+
+In the case of implementing density estimation software, 
+The Adaptive Gaussian KDE could be left out as an optional feature. 
+If the adaptive version were implemented as the default,
+it could happen that when estimating densities with small to moderate
+sample sizes the high variability of the estimator adds confusion.
+However, this adaptive version could be used as the default density estimation
+method within a statistical procedure that usually works with large
+samples. For example, MCMC samples are usually in the order of the thousands.
+Such a large sample decreases the variability of the estimator and 
+lets the adaptive method do its thing as we have seen in the examples.
+
+
+<!-- Es importante notar que todos los metodos pueden ser usados en la práctica. -->
+<!-- A la hora de elegir el método, deberemos sopesar el costo computacional -->
+<!-- que estamos dispuesto a pagar junto a la flexibilidad que deseamos del método. -->
 
 <!-- RANDOM NOTES -->
 

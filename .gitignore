@@ -3,6 +3,9 @@
 .ipynb_checkpoints
 .Rproj.user
 .Rprofile
+.tex
+.pdf
+report/report_cache
 misc/
 notebooks/.ipynb_checkpoints
 src/__pycache__

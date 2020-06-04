@@ -403,7 +403,7 @@ cont_dist_maxs <- list(
 
 cont_dist_bounds <- list(
   "norm" = function(.params) {
-    width <- 3 * .params[[2]]
+    width <- 4 * .params[[2]]
     c(.params[[1]] - width, .params[[1]] + width)
   },
   "t" = function(.params) {
